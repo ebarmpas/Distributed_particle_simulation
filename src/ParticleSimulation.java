@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map.Entry;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -41,31 +43,58 @@ public class ParticleSimulation {
 	}
 	
 	public static class StepReducer extends Reducer<LongWritable, ParticleWritable, LongWritable, ParticleWritable> {
-		
-		private Configuration conf;
-		private long numberOfParticles;
-		
-		@Override
-		public void setup(Context context) throws IOException, InterruptedException {
-			conf = context.getConfiguration();
-			numberOfParticles = conf.getLong("particleNumber", 0);
-		}
-		
+
 		@Override
 		public void reduce(LongWritable key, Iterable<ParticleWritable> values, Context context) throws IOException, InterruptedException {
-			
+		
 			ParticleWritable head = null;
-			Vector2D finalAcceleration, cohesionAcceleration = new Vector2D(0, 0);
-
+			
+			Vector2D cohesionAcceleration = new Vector2D(0, 0), repulsionAcceleration = new Vector2D(0, 0);
+			
+			HashMap<Integer, Vector2D> speciesAccelerations = new HashMap<>();
+			HashMap<Integer, Integer> speciesPopulation = new HashMap<>();
+			
+			int sameSpeciesPopulation = 0, differentSpeciesPopulation = 0;
+					
 			for(ParticleWritable part : values ){
-				cohesionAcceleration.add(part.getLocation());
+				//Check whether this specific particle's species is in the hash map. If not, initialize with with 0,0
+				if(speciesAccelerations.get(part.getSpecies()) == null) 
+					speciesAccelerations.put(part.getSpecies(), new Vector2D(0,0));		
 				
+				//Check whether this specific particle's species is in the hash map. If not, initialize with with 0
+				if(speciesPopulation.get(part.getSpecies()) == null) 
+					speciesPopulation.put(part.getSpecies(), 0);		
+				
+				//Add the acceleration of this particle to the acceleration of the particles of this species.
+				speciesAccelerations.put(part.getSpecies(), (Vector2D.add(speciesAccelerations.get(part.getSpecies()),part.getLocation())));
+				//Increment the amount of particles in this species
+				speciesPopulation.put(part.getSpecies(), speciesPopulation.get(part.getSpecies()) + 1);
+				
+				//Check if the current particle is the head.
 				if (part.isHead()) 
 					head = new ParticleWritable(part);
 			}
+			//Go through the hash map and add up all the values depending on whether they are the same species as the head or not. Also increment the species-segregated population count
+			for (Entry<Integer, Vector2D> entry : speciesAccelerations.entrySet()) {
+				
+			    if(entry.getKey() == head.getSpecies()) {
+			    	cohesionAcceleration.add(entry.getValue());
+			    	sameSpeciesPopulation += speciesPopulation.get(entry.getKey());
+			    }
+			    else {
+			    	repulsionAcceleration.add(entry.getValue());
+			    	differentSpeciesPopulation += speciesPopulation.get(entry.getKey());
+			    	System.out.println("MAPPER | IN ELSE key : " + entry.getKey() + " value : " + entry.getValue().toString());
+			    }
+			}
 			
-			finalAcceleration = Vector2D.div(Vector2D.sub(cohesionAcceleration, Vector2D.mult(numberOfParticles, head.getLocation())), numberOfParticles -1 );
-			head.applyForce(finalAcceleration);
+			//Calculate and apply the cohesion force. Formula : Sum all vectors of all eligible particles. Multiply the location of the head by the number of the eligible particles. Subtract the multiplied location of the head and the vector sum of the eligible particles. Divide the result by the number of eligible particles minus 1
+			if(sameSpeciesPopulation > 0)
+				head.applyForce(Vector2D.div(Vector2D.sub(speciesAccelerations.get(head.getSpecies()), Vector2D.mult(sameSpeciesPopulation, head.getLocation())), sameSpeciesPopulation -1 ));
+			
+			//Calculate and apply the repulsion force. Formula : Sum all vectors of all eligible particles. Multiply the location of the head by the number of the eligible particles. Subtract and the vector sum of the eligible particles and the multiplied location of the head. Divide the result by the number of eligible particles minus 1
+			if(differentSpeciesPopulation > 0)
+				head.applyForce(Vector2D.div(Vector2D.sub(Vector2D.mult(differentSpeciesPopulation, head.getLocation()), speciesAccelerations.get(head.getSpecies())), differentSpeciesPopulation -1 ));
 			
 			head.step();
 			context.write(key, head);

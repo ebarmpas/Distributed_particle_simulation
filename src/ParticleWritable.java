@@ -114,6 +114,13 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		return species + " " + location + " " + velocity + " " +acceleration;
 	}
 
+	public int getSpecies() {
+		return species;
+	}
+
+	public void setSpecies(int species) {
+		this.species = species;
+	}
 
 	public Vector2D getLocation() {
 		return location;
