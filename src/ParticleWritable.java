@@ -7,171 +7,152 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 
 public class ParticleWritable implements WritableComparable<ParticleWritable>, Writable, Comparable<ParticleWritable>{
-	private double xLoc, yLoc, xVel, yVel, xAcc, yAcc;
+	private int species;
+	private Vector2D location, velocity, acceleration;
 	private boolean isHead;
 
 	//default constructor for Hadoop
 	public ParticleWritable() {
-		xLoc = 0;
-		yLoc = 0;
-		xVel = 0;
-		yVel = 0;
-		xAcc = 0;
-		yAcc = 0;
+		
+		species = 0;
+		
+		location = new Vector2D(0, 0);
+		velocity = new Vector2D(0, 0);
+		acceleration = new Vector2D(0, 0);
+		
 		isHead = false;
 	}
 
-	public ParticleWritable(double xLoc, double yLoc) {
+	public ParticleWritable(int species, Vector2D location, Vector2D velocity) {
+		
 		super();
-		this.xLoc = xLoc;
-		this.yLoc = yLoc;
-		xVel = 0;
-		yVel = 0;
-		xAcc = 0;
-		yAcc = 0;
+		
+		this.species = species;
+		this.location = location;
+		this.velocity = velocity;
+		acceleration = new Vector2D(0, 0);
+		
 		isHead = false;
 	}
-	
+
 	public ParticleWritable(ParticleWritable p) {
-		xLoc = p.getXLoc();
-		yLoc = p.getYLoc();
 		
-		xVel = p.getXVel();
-		yVel = p.getYVel();
+		species = p.species;
 		
-		xAcc = p.getXAcc();
-		yAcc = p.getYAcc();
+		location = new Vector2D(p.getLocation());
+		velocity = new Vector2D(p.getVelocity());
+		acceleration = new Vector2D(p.getAcceleration());
 		
-		isHead = p.isHead();
+		isHead = p.isHead;
 	} 
+	public void step() {
+		velocity.add(acceleration);
+		location.add(velocity);
+	}
 	@Override
 	public int hashCode() {
-		return Objects.hash(xAcc, xLoc, xVel, yAcc, yLoc, yVel);
+		return Objects.hash(acceleration, isHead, location, velocity);
 	}
 
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
-
 		if (obj == null)
 			return false;
-		
 		if (getClass() != obj.getClass())
 			return false;
-		
 		ParticleWritable other = (ParticleWritable) obj;
-		return Double.doubleToLongBits(xAcc) == Double.doubleToLongBits(other.xAcc)
-				&& Double.doubleToLongBits(xLoc) == Double.doubleToLongBits(other.xLoc)
-				&& Double.doubleToLongBits(xVel) == Double.doubleToLongBits(other.xVel)
-				&& Double.doubleToLongBits(yAcc) == Double.doubleToLongBits(other.yAcc)
-				&& Double.doubleToLongBits(yLoc) == Double.doubleToLongBits(other.yLoc)
-				&& Double.doubleToLongBits(yVel) == Double.doubleToLongBits(other.yVel);
-	}
-
-
-	@Override
-	public String toString() {
-		return xLoc + " " + yLoc + " " + xVel + " " + yVel + " "+ xAcc + " " + yAcc;
+		return Objects.equals(acceleration, other.acceleration) && isHead == other.isHead
+				&& Objects.equals(location, other.location) && Objects.equals(velocity, other.velocity);
 	}
 
 	@Override
 	public int compareTo(ParticleWritable o) {
-		double pCoords = xLoc + yLoc, oCoords = o.getXLoc() + o.getYLoc();
-		
-		if(pCoords > oCoords)
-			return 1;
-		else if (pCoords < oCoords)
-			return -1;
-
-		return 0;
+		return location.compareTo(o.getLocation());
 	}
 
 	@Override
 	public void readFields(DataInput in) throws IOException {
-		xLoc = in.readDouble();
-		yLoc = in.readDouble();
 
-		xVel = in.readDouble();
-		yVel = in.readDouble();
-
-		xAcc = in.readDouble();
-		yAcc = in.readDouble();
+		species = in.readInt();
+		
+//		location = new Vector2D(in.readDouble(), in.readDouble());
+		location.setX(in.readDouble());
+		location.setY(in.readDouble());
+//		velocity = new Vector2D(in.readDouble(), in.readDouble());
+		velocity.setX(in.readDouble());
+		velocity.setY(in.readDouble());
+//		acceleration = new Vector2D(in.readDouble(), in.readDouble());
+		acceleration.setX(in.readDouble());
+		acceleration.setY(in.readDouble());
 		
 		isHead = in.readBoolean();
 	}
 
 	@Override
 	public void write(DataOutput out) throws IOException {
-		// TODO Auto-generated method stub
-		out.writeDouble(xLoc);
-		out.writeDouble(yLoc);
+		
+		out.writeInt(species);
+		
+		out.writeDouble(location.getX());
+		out.writeDouble(location.getY());
 
-		out.writeDouble(xVel);
-		out.writeDouble(yVel);
+		out.writeDouble(velocity.getX());
+		out.writeDouble(velocity.getY());
 
-		out.writeDouble(xAcc);
-		out.writeDouble(yAcc);
-	
+		out.writeDouble(acceleration.getX());
+		out.writeDouble(acceleration.getY());
+		
 		out.writeBoolean(isHead);
 	}
-
-	public double getXLoc() {
-		return xLoc;
+	public void applyForce(Vector2D v) {
+		acceleration.add(v);
+	}
+	@Override
+	public String toString() {
+		return species + " " + location + " " + velocity + " " +acceleration;
 	}
 
-	public void setXLoc(double xLoc) {
-		this.xLoc = xLoc;
+
+	public Vector2D getLocation() {
+		return location;
 	}
 
-	public double getYLoc() {
-		return yLoc;
+
+	public void setLocation(Vector2D location) {
+		this.location = location;
 	}
 
-	public void setYLoc(double yLoc) {
-		this.yLoc = yLoc;
+
+	public Vector2D getVelocity() {
+		return velocity;
 	}
 
-	public double getXVel() {
-		return xVel;
+
+	public void setVelocity(Vector2D velocity) {
+		this.velocity = velocity;
 	}
 
-	public void setXVel(double xVel) {
-		this.xVel = xVel;
+
+	public Vector2D getAcceleration() {
+		return acceleration;
 	}
 
-	public double getYVel() {
-		return yVel;
+
+	public void setAcceleration(Vector2D acceleration) {
+		this.acceleration = acceleration;
 	}
 
-	public void setYVel(double yVel) {
-		this.yVel = yVel;
-	}
-
-	public double getXAcc() {
-		return xAcc;
-	}
-
-	public void setXAcc(double xAcc) {
-		this.xAcc = xAcc;
-	}
-
-	public double getYAcc() {
-		return yAcc;
-	}
-
-	public void setYAcc(double yAcc) {
-		this.yAcc = yAcc;
-	}
 
 	public boolean isHead() {
 		return isHead;
 	}
 
+
 	public void setHead(boolean isHead) {
 		this.isHead = isHead;
 	}
-
 
 
 }
