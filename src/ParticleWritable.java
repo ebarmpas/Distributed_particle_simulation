@@ -44,11 +44,13 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		acceleration = new Vector2D(p.getAcceleration());
 		
 		isHead = p.isHead;
-	} 
+	}
+	
 	public void step() {
 		velocity.add(acceleration);
 		location.add(velocity);
 	}
+	
 	@Override
 	public int hashCode() {
 		return Objects.hash(acceleration, isHead, location, velocity);
@@ -77,13 +79,12 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 
 		species = in.readInt();
 		
-//		location = new Vector2D(in.readDouble(), in.readDouble());
 		location.setX(in.readDouble());
 		location.setY(in.readDouble());
-//		velocity = new Vector2D(in.readDouble(), in.readDouble());
+		
 		velocity.setX(in.readDouble());
 		velocity.setY(in.readDouble());
-//		acceleration = new Vector2D(in.readDouble(), in.readDouble());
+		
 		acceleration.setX(in.readDouble());
 		acceleration.setY(in.readDouble());
 		
@@ -106,9 +107,11 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		
 		out.writeBoolean(isHead);
 	}
+	
 	public void applyForce(Vector2D v) {
 		acceleration.add(v);
 	}
+	
 	@Override
 	public String toString() {
 		return species + " " + location + " " + velocity + " " +acceleration;
@@ -126,26 +129,21 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		return location;
 	}
 
-
 	public void setLocation(Vector2D location) {
 		this.location = location;
 	}
-
 
 	public Vector2D getVelocity() {
 		return velocity;
 	}
 
-
 	public void setVelocity(Vector2D velocity) {
 		this.velocity = velocity;
 	}
 
-
 	public Vector2D getAcceleration() {
 		return acceleration;
 	}
-
 
 	public void setAcceleration(Vector2D acceleration) {
 		this.acceleration = acceleration;
@@ -156,10 +154,7 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		return isHead;
 	}
 
-
 	public void setHead(boolean isHead) {
 		this.isHead = isHead;
 	}
-
-
 }

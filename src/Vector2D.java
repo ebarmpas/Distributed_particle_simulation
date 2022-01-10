@@ -10,17 +10,18 @@ public class Vector2D implements Comparable<Vector2D>{
 		this.x = 0;
 		this.y = 0;
 	}
+	
 	public Vector2D(Vector2D v) {
 		super();
 		this.x = v.getX();
 		this.y = v.getY();
 	}
+	
 	public Vector2D(double x, double y) {
 		super();
 		this.x = x;
 		this.y = y;
 	}
-	
 	
 	public void add(Vector2D v) {
 		x += v.getX();
@@ -31,7 +32,6 @@ public class Vector2D implements Comparable<Vector2D>{
 		this.x += x;
 		this.y += y;
 	}
-	
 	
 	public void sub(Vector2D v) {
 		x -= v.getX();
@@ -58,6 +58,7 @@ public class Vector2D implements Comparable<Vector2D>{
 	public double mag() {
 		return Math.sqrt(Math.pow(x,2) + Math.pow(y,2));
 	}
+	
 	public double magSq() {
 		return Math.pow(x,2) + Math.pow(y,2);
 	}
@@ -97,17 +98,19 @@ public class Vector2D implements Comparable<Vector2D>{
 	public String toString() {
 		return x + " " + y;
 	}
+	
 	public double getX() {
 		return x;
 	}
+	
 	public void setX(double x) {
 		this.x = x;
 	}
 	
-	
 	public double getY() {
 		return y;
 	}
+	
 	public void setY(double y) {
 		this.y = y;
 	}
@@ -115,12 +118,15 @@ public class Vector2D implements Comparable<Vector2D>{
 	public static Vector2D add(Vector2D v1, Vector2D v2) {
 		return new Vector2D(v1.getX() + v2.getX(), v1.getY() + v2.getY());
 	}
+	
 	public static Vector2D sub(Vector2D v1, Vector2D v2) {
 		return new Vector2D(v1.getX() - v2.getX(), v1.getY() - v2.getY());
 	}
+	
 	public static Vector2D mult(double c, Vector2D v) {
 		return new Vector2D(c * v.getX(), c * v.getY());
 	}
+	
 	public static Vector2D div(Vector2D v, double c) {
 		if(c == 0)
 			c = 1;

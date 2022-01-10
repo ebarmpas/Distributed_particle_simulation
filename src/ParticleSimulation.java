@@ -85,7 +85,6 @@ public class ParticleSimulation {
 			    else {
 			    	repulsionAcceleration.add(entry.getValue());
 			    	differentSpeciesPopulation += speciesPopulation.get(entry.getKey());
-			    	System.out.println("MAPPER | IN ELSE key : " + entry.getKey() + " value : " + entry.getValue().toString());
 			    }
 			}
 			

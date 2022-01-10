@@ -13,6 +13,7 @@ public class Step {
 		conf = new Configuration();
 		job = Job.getInstance(conf, jobName);
 	}
+	
 	public void setJarByClass(Class <?> cls) {
 		job.setJarByClass(cls);
 	}
@@ -24,15 +25,19 @@ public class Step {
 	public void setMapperClass(Class <? extends Mapper> cls) {
 		job.setMapperClass(cls);
 	}
+	
 	public void setReducerClass(Class <? extends Reducer> cls) {
 		job.setReducerClass(cls);
 	}
+	
 	public void setOutputKeyClass(Class <?> theClass) {
 		job.setOutputKeyClass(theClass);
 	}
+	
 	public void setOutputValueClass(Class <?> theClass) {
 		job.setOutputValueClass(theClass);
 	}
+	
 	public Job getJob() {
 		return job;
 	}
