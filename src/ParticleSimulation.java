@@ -7,7 +7,7 @@ import org.apache.hadoop.fs.Path;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -31,10 +31,11 @@ public class ParticleSimulation {
 		
 		@Override
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+			
 			String[] keyvalue = value.toString().split("\t");
 			String[] vectorAttributes = keyvalue[VALUE].split(" ");
-			
-			for(int i = 0; i < numberOfParticles; i++) {
+						
+			for(long i = 0; i < numberOfParticles; i++) {
 				ParticleWritable p = new ParticleWritable(Integer.parseInt(vectorAttributes[SPECIES]), new Vector2D(Double.parseDouble(vectorAttributes[LOCATION_X]), Double.parseDouble(vectorAttributes[LOCATION_Y])), new Vector2D(Double.parseDouble(vectorAttributes[VELOCITY_X]), Double.parseDouble(vectorAttributes[VELOCITY_Y])));
 				p.setHead(i == Integer.parseInt(keyvalue[KEY]));
 
@@ -104,30 +105,38 @@ public class ParticleSimulation {
 	
 	public static void main(String[] args) throws Exception {
 		
-		Step[] step = new Step[Integer.parseInt(args[2])];
+		long stepParticleNumber = Long.parseLong(args[1]);
+			
+		System.out.println("Number of steps : " + args[2]);		
 		
-		for(int i = 0; i < step.length; i++) {
+		for(int i = 0; i < Integer.parseInt(args[2]); i++) {
+			Configuration conf = new Configuration();
+			Job job = Job.getInstance(conf);
 			
-			step[i] = new Step("ParticleSimulation");
+			job.setJobName("ParticleSimulation");
 			
-			step[i].setJarByClass(ParticleSimulation.class);
+			job.setJarByClass(ParticleSimulation.class);
 			
-			step[i].setLong("particleNumber", Long.parseLong(args[1]));
+			job.getConfiguration().setLong("particleNumber", stepParticleNumber);
 			
-			step[i].setMapperClass(StepMapper.class);
-			step[i].setReducerClass(StepReducer.class);
+			job.setMapperClass(StepMapper.class);
+			job.setReducerClass(StepReducer.class);
 			
-			step[i].setOutputKeyClass(LongWritable.class);
-			step[i].setOutputValueClass(ParticleWritable.class);
+			job.setOutputKeyClass(LongWritable.class);
+			job.setOutputValueClass(ParticleWritable.class);
 			
+			FileInputFormat.addInputPath(job, new Path(args[0] + i));
+			FileOutputFormat.setOutputPath(job, new Path(args[0] + (i + 1)));
 			
-			FileInputFormat.addInputPath(step[i].getJob(), new Path(args[0] + i));
-			FileOutputFormat.setOutputPath(step[i].getJob(), new Path(args[0] + (i + 1)));
+			System.out.println("Step " + (i + 1));
+			System.out.println("Number of particles : " + stepParticleNumber);	
 			
-			step[i].getJob().waitForCompletion(true);
+			job.waitForCompletion(true);
+			
+			stepParticleNumber = job.getCounters().findCounter("org.apache.hadoop.mapreduce.TaskCounter","MAP_INPUT_RECORDS").getValue();
 		}
 		
-		System.exit(1);
+		System.exit(0);
 	}
 }
 
