@@ -46,8 +46,9 @@ public class ParticleWritable implements WritableComparable<ParticleWritable>, W
 		isHead = p.isHead;
 	}
 	
-	public void step() {
+	public void step(double velocityLimit) {
 		velocity.add(acceleration);
+		velocity.limit(velocityLimit);
 		location.add(velocity);
 	}
 	

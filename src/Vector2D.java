@@ -62,7 +62,17 @@ public class Vector2D implements Comparable<Vector2D>{
 	public double magSq() {
 		return Math.pow(x,2) + Math.pow(y,2);
 	}
-	
+	public void limit(double lim) {
+		if(x > lim)
+			x = lim;
+		else if(x < lim * -1)
+			x = lim * -1;
+		
+		if(y > lim)
+			y = lim;
+		else if(y < lim * -1)
+			y = lim * -1;
+	}
 	@Override
 	public int hashCode() {
 		return Objects.hash(x, y);
@@ -70,12 +80,16 @@ public class Vector2D implements Comparable<Vector2D>{
 	
 	@Override
 	public boolean equals(Object obj) {
+		
 		if (this == obj)
 			return true;
+		
 		if (obj == null)
 			return false;
+		
 		if (getClass() != obj.getClass())
 			return false;
+		
 		Vector2D other = (Vector2D) obj;
 		return Double.doubleToLongBits(x) == Double.doubleToLongBits(other.x)
 				&& Double.doubleToLongBits(y) == Double.doubleToLongBits(other.y);
@@ -83,6 +97,7 @@ public class Vector2D implements Comparable<Vector2D>{
 	
 	@Override
 	public int compareTo(Vector2D o) {
+		
 		double sum0 = x+y;
 		double sum1 = o.getX() + o.getY();
 		

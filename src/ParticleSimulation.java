@@ -17,16 +17,14 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 public class ParticleSimulation {
 
 	public static class StepMapper extends Mapper<LongWritable, Text, LongWritable, ParticleWritable> {
-		
-		private Configuration conf;
+
 		private final static int KEY = 0, VALUE = 1;
 		private final static int SPECIES = 0, LOCATION_X = 1, LOCATION_Y = 2, VELOCITY_X = 3, VELOCITY_Y = 4;//, ACCELERATION_X = 5, ACCELERATION_Y = 6;
 		private long numberOfParticles;
 		
 		@Override
 	    public void setup(Context context) throws IOException, InterruptedException {
-			conf = context.getConfiguration();
-			numberOfParticles = conf.getLong("particleNumber", 0);
+			numberOfParticles = context.getConfiguration().getLong("particleNumber", 0);
 		}
 		
 		@Override
@@ -45,7 +43,12 @@ public class ParticleSimulation {
 	}
 	
 	public static class StepReducer extends Reducer<LongWritable, ParticleWritable, LongWritable, ParticleWritable> {
-
+		
+		private int velocityLimit;
+		@Override
+		public void setup(Context context) throws IOException, InterruptedException {
+			velocityLimit = context.getConfiguration().getInt("velocityLimit", 500);
+		}
 		@Override
 		public void reduce(LongWritable key, Iterable<ParticleWritable> values, Context context) throws IOException, InterruptedException {
 		
@@ -97,7 +100,7 @@ public class ParticleSimulation {
 			if(differentSpeciesPopulation > 0)
 				head.applyForce(Vector2D.div(Vector2D.sub(Vector2D.mult(differentSpeciesPopulation, head.getLocation()), speciesAccelerations.get(head.getSpecies())), differentSpeciesPopulation -1 ));
 			
-			head.step();
+			head.step(velocityLimit);
 			context.write(key, head);
 			
 		}
@@ -117,6 +120,7 @@ public class ParticleSimulation {
 			
 			job.setJarByClass(ParticleSimulation.class);
 			
+			job.getConfiguration().setInt("velocityLimit", Integer.parseInt(args[3]));
 			job.getConfiguration().setLong("particleNumber", stepParticleNumber);
 			
 			job.setMapperClass(StepMapper.class);
@@ -129,11 +133,12 @@ public class ParticleSimulation {
 			FileOutputFormat.setOutputPath(job, new Path(args[0] + (i + 1)));
 			
 			System.out.println("Step " + (i + 1));
-			System.out.println("Number of particles : " + stepParticleNumber);	
+			System.out.println("Number of particles : " + stepParticleNumber);
+			System.out.println("Velocity limit: " + args[3]);
 			
 			job.waitForCompletion(true);
 			
-			stepParticleNumber = job.getCounters().findCounter("org.apache.hadoop.mapreduce.TaskCounter","MAP_INPUT_RECORDS").getValue();
+			stepParticleNumber = job.getCounters().findCounter("org.apache.hadoop.mapreduce.TaskCounter","REDUCE_OUTPUT_RECORDS").getValue();
 		}
 		
 		System.exit(0);
