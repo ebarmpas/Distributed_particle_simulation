@@ -7,6 +7,14 @@ public class Particle implements Serializable{
 	private double velX, velY;
 	private double accX, accY;
 	
+	public Particle() {
+		this.locX = 0;
+		this.locY = 0;
+		this.velX = 0;
+		this.velY = 0;
+		this.accX = 0;
+		this.accY = 0;
+	}
 	public Particle(double locX, double locY, double velX, double velY, double accX, double accY) {
 		this.locX = locX;
 		this.locY = locY;
@@ -17,15 +25,20 @@ public class Particle implements Serializable{
 	}
 	
 	public void step() {
+
 		velX += accX;
 		velY += accY;
-	
+		
 		locX += velX;
 		locY += velY;
 	}
 	public void resetAcc() {
-		accX =0;
-		accY =0;
+		accX = 0;
+		accY = 0;
+	}
+	public void applyForce(double x, double y) {
+		accX += x;
+		accY += y;
 	}
 	public void applyForceX(double force) {
 		accX += force;
@@ -84,7 +97,5 @@ public class Particle implements Serializable{
 	@Override
 	public String toString() {
 		return locX + " " + locY + " " + velX + " " + velY + " " + accX + " " + accY;
-	}
-	
-	
+	}	
 }
