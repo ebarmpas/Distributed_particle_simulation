@@ -2,26 +2,23 @@ import java.io.Serializable;
 
 public class Particle implements Serializable{
 	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 2L;
 	private double locX, locY;
 	private double velX, velY;
 	private double accX, accY;
+	private int species;
 	
 	public Particle() {
-		this.locX = 0;
-		this.locY = 0;
-		this.velX = 0;
-		this.velY = 0;
-		this.accX = 0;
-		this.accY = 0;
+
 	}
-	public Particle(double locX, double locY, double velX, double velY, double accX, double accY) {
+	public Particle(double locX, double locY, double velX, double velY, double accX, double accY, int species) {
 		this.locX = locX;
 		this.locY = locY;
 		this.velX = velX;
 		this.velY = velY;
 		this.accX = accX;
 		this.accY = accY;
+		this.species = species;
 	}
 	
 	public void step() {
@@ -36,6 +33,7 @@ public class Particle implements Serializable{
 		accX = 0;
 		accY = 0;
 	}
+	
 	public void applyForce(double x, double y) {
 		accX += x;
 		accY += y;
@@ -93,9 +91,17 @@ public class Particle implements Serializable{
 	public void setAccY(double accY) {
 		this.accY = accY;
 	}
-
+	public int getSpecies() {
+		return species;
+	}
+	public void setSpecies(int species) {
+		this.species = species;
+	}
+	public boolean sameSpecies(Particle p) {
+		return p.getSpecies() == this.species;
+	}
 	@Override
 	public String toString() {
-		return locX + " " + locY + " " + velX + " " + velY + " " + accX + " " + accY;
+		return (locX + " " + locY + " " + velX + " " + velY + " " + accX + " " + accY + " " + species);
 	}	
 }

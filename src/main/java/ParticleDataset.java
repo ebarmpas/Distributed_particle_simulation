@@ -6,7 +6,7 @@ import org.apache.spark.sql.Encoders;
 
 public class ParticleDataset {
 
-	final static int X =0, Y= 1;
+	final static int X =0, Y= 1, SPECIES = 6;
 
 	Dataset<Particle> particles;	
 		
@@ -14,7 +14,8 @@ public class ParticleDataset {
 		
 		particles = source.map((MapFunction<String, Particle>) f -> {
 			String[] fields = f.split(" ");
-			return new Particle(Double.parseDouble(fields[0]), Double.parseDouble(fields[1]), 0,0,0,0);
+
+			return new Particle(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y]), 0,0,0,0, Integer.parseInt(fields[SPECIES]));
 		}, Encoders.bean(Particle.class)).cache();
 	}
 	public void show() {
@@ -29,15 +30,27 @@ public class ParticleDataset {
 			particle.resetAcc();
 			
 			p.forEach((elem) ->{
-				double x = particle.getLocX() - elem.getLocX();
-				double y = particle.getLocY() - elem.getLocY();
-				
+				double x = elem.getLocX() - particle.getLocX();
+				double y = elem.getLocY() - particle.getLocY();
+				double xForce = 0, yForce = 0;
+
 				if(x != 0)
-					particle.applyForceX(x/(x*x));
+					xForce = x/(x*x);
 				if(y != 0)
-					particle.applyForceY(y/(y*y));
+					yForce = y/(y*y);
+				
+				if(!(particle.sameSpecies(elem))) {
+					
+					xForce *= -1;
+					yForce *= -1;
+				}
+				
+				particle.applyForce(xForce, yForce);
 			});
-			
+			return particle;
+		}, Encoders.bean(Particle.class));
+		
+		particles = particles.map((MapFunction<Particle, Particle>) (particle) -> {
 			particle.step();
 			return particle;
 		}, Encoders.bean(Particle.class));
