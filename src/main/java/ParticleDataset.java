@@ -1,9 +1,6 @@
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -13,7 +10,7 @@ public class ParticleDataset {
 	final static int X =0, Y= 1, SPECIES = 6;
 
 	Dataset<Particle> particles;	
-		
+	
 	public ParticleDataset(Dataset<String> source) {
 		
 		particles = source.map((MapFunction<String, Particle>) f -> {
@@ -61,7 +58,7 @@ public class ParticleDataset {
 		}, Encoders.bean(Particle.class));
 		
 	}
-	public void output(int step) throws IOException {
-		particles.write().csv("/usr/local/spark/Simulation_results/steps/step"+step);
+	public void output(int step, String outputPath) throws IOException {
+		particles.write().csv(outputPath + "/steps/step" + step);
 	}
 }
