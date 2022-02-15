@@ -1,5 +1,9 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
+import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -20,6 +24,7 @@ public class ParticleDataset {
 	}
 	public void show() {
 		particles.show();
+//		particles.describe().show();
 	}
 	public void step() {
 		
@@ -55,5 +60,8 @@ public class ParticleDataset {
 			return particle;
 		}, Encoders.bean(Particle.class));
 		
+	}
+	public void output(int step) throws IOException {
+		particles.write().csv("/usr/local/spark/Simulation_results/steps/step"+step);
 	}
 }
