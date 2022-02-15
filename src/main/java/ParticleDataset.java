@@ -19,10 +19,11 @@ public class ParticleDataset {
 			return new Particle(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y]), 0,0,0,0, Integer.parseInt(fields[SPECIES]));
 		}, Encoders.bean(Particle.class)).cache();
 	}
+	
 	public void show() {
 		particles.show();
-//		particles.describe().show();
 	}
+	
 	public void step() {
 		
 		List<Particle> p = particles.collectAsList();
@@ -30,23 +31,23 @@ public class ParticleDataset {
 		particles = particles.map((MapFunction<Particle, Particle>) (particle)->{
 			
 			particle.resetAcc();
-			
+				
 			p.forEach((elem) ->{
-				double x = elem.getLocX() - particle.getLocX();
+				double x = elem.getLocX() - particle.getLocX();	
 				double y = elem.getLocY() - particle.getLocY();
 				double xForce = 0, yForce = 0;
-
+	
 				if(x != 0)
 					xForce = x/(x*x);
 				if(y != 0)
 					yForce = y/(y*y);
-				
-				if(!(particle.sameSpecies(elem))) {
 					
+				if(!(particle.sameSpecies(elem))) {
+						
 					xForce *= -1;
 					yForce *= -1;
 				}
-				
+					
 				particle.applyForce(xForce, yForce);
 			});
 			return particle;
