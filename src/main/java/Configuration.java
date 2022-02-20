@@ -6,11 +6,11 @@ import java.util.Scanner;
 
 public class Configuration {
 	private HashMap<String, Object> conf;
-	
+	private String filepath;
 	public Configuration(File source) throws FileNotFoundException {
 		Scanner scan = new Scanner(source);
 		conf = new HashMap<String, Object>();
-		
+		filepath = source.getAbsolutePath();
 		while(scan.hasNext()) {
 			String line = scan.nextLine();
 			String[] token;
@@ -40,7 +40,12 @@ public class Configuration {
 	public Object getValue(String key) {
 		return conf.get(key);
 	}
-	
+	public String getAppName() {
+		return (String) conf.get("AppName");
+	}
+	public Integer getSteps() {
+		return (Integer) conf.get("Steps");
+	}
 	public void print() {
 		final int margin = 4;
 		int maxKeyLength = 3, maxTypeLength = 4;
@@ -58,7 +63,7 @@ public class Configuration {
 		
 		key = pad(key, maxKeyLength + margin);
 		type = pad(type, maxTypeLength + margin);
-		System.out.println("\nCONFIGURATION\n");
+		System.out.println("\nCONFIGURATION : " + filepath + "\n");
 		System.out.println(key + type + "VALUE");
 		
 		for(Entry<String, Object> entry : conf.entrySet()) {
