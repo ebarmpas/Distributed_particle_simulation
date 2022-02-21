@@ -59,6 +59,9 @@ public class ParticleDataset {
 		}, Encoders.bean(Particle.class));
 		
 	}
+	public void checkpoint() {
+		particles = particles.localCheckpoint(true);
+	}
 	public void output(int step, String outputPath) throws IOException {
 		particles.write().csv(outputPath + "/steps/step" + step);
 	}

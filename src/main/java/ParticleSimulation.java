@@ -6,22 +6,32 @@ import java.io.IOException;
 import org.apache.spark.sql.Dataset;
 
 public class ParticleSimulation {
+	
 	public static void main(String[] args) throws IOException {
 		
-		Configuration conf = new Configuration(new File("configuration.txt"));
-		conf.print();
-		SparkSession spark = SparkSession.builder().appName((String) conf.getValue("AppName")).getOrCreate();
-
 		String[] InputSource = new String[1];
-		InputSource[0] = (String) conf.getValue("InputSource"); 
-		Dataset<String> fileData = spark.read().textFile(InputSource);
+		SimulationConfiguration simConf = new SimulationConfiguration(new File(args[0]));
+		SparkSession spark = SparkSession.builder().appName(simConf.getAppName()).getOrCreate();
+		Dataset<String> fileData;
+		ParticleDataset pd;
+		spark.sparkContext().setCheckpointDir(simConf.getCheckpointDir());
+		//spark.conf().set("spark.sql.streaming.checkpointLocation", simConf.getCheckpointDir());
+		simConf.print();
 		
-		ParticleDataset pd = new ParticleDataset(fileData);
+		InputSource[0] = simConf.getInputDir(); 
 		
-		for(int i = 0; i < (int) conf.getValue("StepNumber"); i++){
+		fileData = spark.read().textFile(InputSource);
+		pd = new ParticleDataset(fileData);
+		
+		for(int i = 0; i < simConf.getStepNumber(); i++){
 			pd.step();
-//			pd.show();
-			pd.output(i, (String)conf.getValue("OutputPath"));
+			
+			if((i % simConf.getCheckpointInterval()) == 0)
+				pd.checkpoint();
+
+			pd.output(i, simConf.getOutputDir());
+			
+			System.out.println("\n\nSTEP " + i + " HAS BEEN COMPLETED \n\n");
 		}
 
 		spark.stop();
