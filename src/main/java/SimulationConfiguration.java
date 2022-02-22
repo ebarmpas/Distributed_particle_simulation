@@ -1,3 +1,12 @@
+/*
+ * Holds information about the simulation. Currently holds:
+ *  The name of the app
+ *  The number of steps to be executed
+ *  The directory in which the Particle Dataset gets checkpointed
+ *  The input directory
+ *  The output directory
+ */
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -5,26 +14,36 @@ import java.util.Map.Entry;
 import java.util.Scanner;
 
 public class SimulationConfiguration {
+	
+	private static int KEY = 0, VALUE = 1;
+	//The different options are saved as key-value pairs. The keys are always string and the values can either be double, int, or String
 	private HashMap<String, Object> simulationSettings;
 	private String filepath;
+	
 	public SimulationConfiguration(File source) throws FileNotFoundException {
 		Scanner scan = new Scanner(source);
 		simulationSettings = new HashMap<String, Object>();
+		
 		filepath = source.getAbsolutePath();
+		
 		while(scan.hasNext()) {
+			
 			String line = scan.nextLine();
 			String[] token;
 			Object value = new Object();
 			
+			//Check if the next line is either empty or a comment, if yes, skip
 			if(line.length() == 0 || line.startsWith("//"))
 				continue;
 			
+			//Split the line into two tokens: The value and the key
 			token = line.split("=");
 			
+			//Find out what kind of value key is. Tries for double, if it fails, tries for int, if that also fails, leaves it as a String
 			try {
-				value = Double.parseDouble(token[1]);
+				value = Double.parseDouble(token[VALUE]);
 				try {
-					value = Integer.parseInt(token[1]);
+					value = Integer.parseInt(token[VALUE]);
 				} catch (Exception e) {
 
 				}
@@ -32,14 +51,11 @@ public class SimulationConfiguration {
 				value = token[1];
 			}
 			
-			simulationSettings.put(token[0], value);
+			simulationSettings.put(token[KEY], value);
 		}
 		scan.close();
 	}
-	
-	public Object getValue(String key) {
-		return simulationSettings.get(key);
-	}
+	//Simple getters that cast the object into the desired data type
 	public String getAppName() {
 		return (String) simulationSettings.get("AppName");
 	}
@@ -58,36 +74,41 @@ public class SimulationConfiguration {
 	public Integer getCheckpointInterval() {
 		return (Integer) simulationSettings.get("CheckpointInterval");
 	}
+	
+	//Prints the contents of the configuration file as a table.
 	public void print() {
 		final int margin = 4;
 		int maxKeyLength = 3, maxTypeLength = 4;
 		
-		String key = "KEY", type = "TYPE";
-		
+		//Iterate through every entry from the configuration file to find the max length of both the keys and the types
 		for(Entry<String, Object> entry : simulationSettings.entrySet()) {
 			
+			//Check if the length of the key is greater than the current max length of the key. If not, set it to it.
 			if(entry.getKey().length() > maxKeyLength)
 				maxKeyLength = entry.getKey().length();
 			
-			if(entry.getValue().getClass().toString().length() > maxTypeLength) 
+			//Check if the length of the java class converted into a string is greater than the current max length of type. If not, set it to it.
+			if(entry.getValue().getClass().toString().substring(16).length() > maxTypeLength) 
 				maxTypeLength = entry.getValue().getClass().toString().substring(16).length();
 		}
-		
-		key = pad(key, maxKeyLength + margin);
-		type = pad(type, maxTypeLength + margin);
+				
+		//Print the headers the key and type headers to be of appropriate length so that everything is lined up
 		System.out.println("\nCONFIGURATION : " + filepath + "\n");
-		System.out.println(key + type + "VALUE");
+		System.out.println(pad("KEY", (maxKeyLength + margin)) + pad("TYPE", (maxTypeLength + margin)) + "VALUE");
 		
 		for(Entry<String, Object> entry : simulationSettings.entrySet()) {
-			String k = entry.getKey(), t = entry.getValue().getClass().toString().substring(16);
 			
-			k = pad(k, maxKeyLength + margin);
-			t = pad(t, maxTypeLength + margin);
-			
-			System.out.println(k + t + entry.getValue());
+			//Print the actual values of each entry on the simulation settings, while also padding them to ensure everything is lined up
+			System.out.println(pad(entry.getKey(), maxKeyLength + margin) +
+			pad(entry.getValue().getClass().toString().substring(16), (maxTypeLength + margin))
+			+ entry.getValue());
 		}
-		System.out.println();
+		
+		//Leave an extra empty line at the end
+		System.out.print("\n");
 	}
+	
+	//Pad a String s with spaces until the String is of length len
 	private String pad(String s, int len) {
 		for(int i = s.length(); i < len; i++)
 			s+= " ";

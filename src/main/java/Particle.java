@@ -1,3 +1,9 @@
+/*
+ * Particles are the building blocks of the simulation. 
+ * They are a collection of vectors, whose job it is to keep track of location, velocity, acceleration, and a species.
+ * 
+ */
+
 import java.io.Serializable;
 
 public class Particle implements Serializable{
@@ -8,6 +14,8 @@ public class Particle implements Serializable{
 	private double accX, accY;
 	private int species;
 	
+	
+	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically
 	public Particle() {
 
 	}
@@ -21,6 +29,7 @@ public class Particle implements Serializable{
 		this.species = species;
 	}
 	
+	//Add the acceleration to the velocity, and the velocity to the acceleration
 	public void step() {
 
 		velX += accX;
@@ -29,11 +38,14 @@ public class Particle implements Serializable{
 		locX += velX;
 		locY += velY;
 	}
+	
+	//Set acceleration to zero, used at the beginning of each step
 	public void resetAcc() {
 		accX = 0;
 		accY = 0;
 	}
 	
+	//Add to the acceleration
 	public void applyForce(double x, double y) {
 		accX += x;
 		accY += y;

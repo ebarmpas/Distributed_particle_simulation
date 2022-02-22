@@ -1,28 +1,32 @@
+/*
+ * Main driver class for the Particle Simulation
+ * Its job is to simply setup the Spark environment and call methods
+ */
 import org.apache.spark.sql.SparkSession;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.spark.sql.Dataset;
-
 public class ParticleSimulation {
 	
 	public static void main(String[] args) throws IOException {
-		
-		String[] InputSource = new String[1];
+		//Helper objects; InputSource array to satisfy .textFile, and simConf holds execution information.
+		String[] inputSource = new String[1];
 		SimulationConfiguration simConf = new SimulationConfiguration(new File(args[0]));
+		//Main Spark Object
 		SparkSession spark = SparkSession.builder().appName(simConf.getAppName()).getOrCreate();
-		Dataset<String> fileData;
+		//Main business logic object
 		ParticleDataset pd;
+		
 		spark.sparkContext().setCheckpointDir(simConf.getCheckpointDir());
-		//spark.conf().set("spark.sql.streaming.checkpointLocation", simConf.getCheckpointDir());
 		simConf.print();
 		
-		InputSource[0] = simConf.getInputDir(); 
+		inputSource[0] = simConf.getInputDir(); 
 		
-		fileData = spark.read().textFile(InputSource);
-		pd = new ParticleDataset(fileData);
+		pd = new ParticleDataset(spark.read().textFile(inputSource));
 		
+		
+		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result 
 		for(int i = 0; i < simConf.getStepNumber(); i++){
 			pd.step();
 			
