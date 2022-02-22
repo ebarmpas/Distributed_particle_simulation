@@ -6,7 +6,6 @@
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -28,7 +27,12 @@ public class ParticleDataset {
 			String[] fields = f.split(" ");
 			
 			//Parse the fields into the appropriate data type to instantiate the Particle Object
-			return new Particle(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y]), 0,0,0,0, Integer.parseInt(fields[SPECIES]));			
+			return new Particle(new Vector2D(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y])),
+								new Vector2D(0,0), 
+								new Vector2D(0,0), 
+								Integer.parseInt(fields[SPECIES]));
+			
+		
 		}, Encoders.bean(Particle.class)).cache();
 		
 		//Delete the old String Dataset after we are done
@@ -56,25 +60,24 @@ public class ParticleDataset {
 			p.forEach((elem) ->{
 				
 				//Calculate the distance for x and y. 
-				double x = elem.getLocX() - particle.getLocX();	
-				double y = elem.getLocY() - particle.getLocY();
-				double xForce = 0, yForce = 0;
+				Vector2D distance = Vector2D.sub(elem.getLocation(), particle.getLocation());
+				Vector2D force = new Vector2D();
+				
 	
 				//If the distance is not zero, calculate the force
-				if(x != 0)
-					xForce = x/(x*x);
-				if(y != 0)
-					yForce = y/(y*y);
+				if(distance.getX() != 0)
+					force.setX(distance.getX()/(distance.getX()*distance.getX()));
+				if(distance.getY() != 0)
+					force.setY(distance.getY()/(distance.getY()*distance.getY()));
+
 					
 				//Attraction and repulsion are opposites, so check whether the two particles are of a different species and invert the force if that's the case
-				if(!(particle.sameSpecies(elem))) {
-						
-					xForce *= -1;
-					yForce *= -1;
-				}
+				if(!(particle.sameSpecies(elem))) 
+					force.mult(-1);
+
 				
 				//Finally, apply the force and then proceed to the next particle
-				particle.applyForce(xForce, yForce);
+				particle.applyForce(force);
 			});
 			
 			return particle;
@@ -97,6 +100,6 @@ public class ParticleDataset {
 	
 	//Write the current state of the Dataset onto a csv file
 	public void output(int step, String outputPath) throws IOException {
-		particles.write().csv(outputPath + "/steps/step" + step);
+		particles.write().json(outputPath + "/steps/step" + step);
 	}
 }
