@@ -2,6 +2,7 @@
  * Main driver class for the Particle Simulation
  * Its job is to simply setup the Spark environment and call methods
  */
+
 import org.apache.spark.sql.SparkSession;
 
 import java.io.File;
@@ -24,11 +25,11 @@ public class ParticleSimulation {
 		inputSource[0] = simConf.getInputDir(); 
 		
 		pd = new ParticleDataset(spark.read().textFile(inputSource));
-		
-		
+			
 		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result 
 		for(int i = 0; i < simConf.getStepNumber(); i++){
-			pd.step();
+			
+			pd.step(simConf.getMovementMultiplier(), simConf.getPlaneWidth(), simConf.getPlaneHeight());
 			
 			if((i % simConf.getCheckpointInterval()) == 0)
 				pd.checkpoint();

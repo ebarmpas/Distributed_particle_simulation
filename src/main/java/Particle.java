@@ -31,10 +31,11 @@ public class Particle implements Serializable{
 
 
 	//Add the acceleration to the velocity, and the velocity to the acceleration
-	public void step() {
+	public void step(int width, int height) {
 
 		velocity.add(acceleration);
 		location.add(velocity);
+		location.mod(width, height);
 	}
 	
 	//Set acceleration to zero, used at the beginning of each step

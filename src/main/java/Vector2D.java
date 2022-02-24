@@ -45,10 +45,13 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 		this.x += x;
 		this.y += y;
 	}
-	
+	public void mod(int w, int h) {
+		x %= w;
+		y %= h;
+	}
 	public void mult(double c) {
 		x *= c;
-		y *= y;
+		y *= c;
 	}
 	
 	public void div(double c) {

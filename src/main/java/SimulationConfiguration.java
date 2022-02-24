@@ -59,8 +59,8 @@ public class SimulationConfiguration {
 	public String getAppName() {
 		return (String) simulationSettings.get("AppName");
 	}
-	public Integer getStepNumber() {
-		return (Integer) simulationSettings.get("StepNumber");
+	public int getStepNumber() {
+		return (int) simulationSettings.get("StepNumber");
 	}
 	public String getCheckpointDir() {
 		return (String) simulationSettings.get("CheckpointDir");
@@ -71,8 +71,17 @@ public class SimulationConfiguration {
 	public String getOutputDir() {
 		return (String) simulationSettings.get("OutputDir");
 	}
-	public Integer getCheckpointInterval() {
-		return (Integer) simulationSettings.get("CheckpointInterval");
+	public int getCheckpointInterval() {
+		return (int) simulationSettings.get("CheckpointInterval");
+	}
+	public double getMovementMultiplier() {
+		return (double) simulationSettings.get("MovementMultiplier");
+	}
+	public int getPlaneWidth() {
+		return (int) simulationSettings.get("PlaneWidth");
+	}
+	public int getPlaneHeight() {
+		return (int) simulationSettings.get("PlaneHeight");
 	}
 	
 	//Prints the contents of the configuration file as a table.

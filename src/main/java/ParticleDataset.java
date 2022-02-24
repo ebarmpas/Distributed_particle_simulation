@@ -46,7 +46,7 @@ public class ParticleDataset {
 	
 	//The "soul" of the program. Calculates everything that needs to be calculated regarding the movement of the particles by updating their position, velocity and acceleration.
 	//Currently there are two forces at play: attraction, which happens between particles of the same species and repulsion, which happens between particles of different species 
-	public void step() {
+	public void step(double multiplier, int width, int height) {
 		
 		List<Particle> p = particles.collectAsList();
 		
@@ -63,10 +63,23 @@ public class ParticleDataset {
 				Vector2D distance = Vector2D.sub(elem.getLocation(), particle.getLocation());
 				Vector2D force = new Vector2D();
 				
-	
+				//Since the plane is a sphere, and points can be connected from two directions, we need to find the one that is closer and use that.
+				if(Math.abs(distance.getX()) > (width - Math.abs(distance.getX()))) 
+					if(Math.signum(distance.getX()) == 1)
+						distance.setX(distance.getX() - width);
+					else
+						distance.setX(width + distance.getX());
+				
+				if(Math.abs(distance.getY()) > (height - Math.abs(distance.getY()))) 
+					if(Math.signum(distance.getY()) == 1)
+						distance.setY(distance.getY() - height);
+					else
+						distance.setY(distance.getY() + height);
+				
 				//If the distance is not zero, calculate the force
 				if(distance.getX() != 0)
 					force.setX(distance.getX()/(distance.getX()*distance.getX()));
+				
 				if(distance.getY() != 0)
 					force.setY(distance.getY()/(distance.getY()*distance.getY()));
 
@@ -75,7 +88,7 @@ public class ParticleDataset {
 				if(!(particle.sameSpecies(elem))) 
 					force.mult(-1);
 
-				
+				force.mult(multiplier);
 				//Finally, apply the force and then proceed to the next particle
 				particle.applyForce(force);
 			});
@@ -86,7 +99,7 @@ public class ParticleDataset {
 		
 		//Apply all the changes that were calculated previously. This is done separately to make sure everything is done uniformly
 		particles = particles.map((MapFunction<Particle, Particle>) (particle) -> {
-			particle.step();
+			particle.step(width, height);
 			return particle;
 		}, Encoders.bean(Particle.class));
 		
@@ -98,7 +111,7 @@ public class ParticleDataset {
 		particles = particles.localCheckpoint(true);
 	}
 	
-	//Write the current state of the Dataset onto a csv file
+	//Write the current state of the Dataset onto a file
 	public void output(int step, String outputPath) throws IOException {
 		particles.write().json(outputPath + "/steps/step" + step);
 	}
