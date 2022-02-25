@@ -29,7 +29,7 @@ public class ParticleSimulation {
 		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result 
 		for(int i = 0; i < simConf.getStepNumber(); i++){
 			
-			pd.step(simConf.getMovementMultiplier(), simConf.getPlaneWidth(), simConf.getPlaneHeight());
+			pd.step(simConf.getForceMultiplier(), simConf.getPlaneWidth(), simConf.getPlaneHeight());
 			
 			if((i % simConf.getCheckpointInterval()) == 0)
 				pd.checkpoint();

@@ -9,20 +9,21 @@
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.TreeMap;
 
 public class SimulationConfiguration {
 	
 	private static int KEY = 0, VALUE = 1;
 	//The different options are saved as key-value pairs. The keys are always string and the values can either be double, int, or String
-	private HashMap<String, Object> simulationSettings;
+	private Map<String, Object> simulationSettings;
 	private String filepath;
 	
 	public SimulationConfiguration(File source) throws FileNotFoundException {
 		Scanner scan = new Scanner(source);
-		simulationSettings = new HashMap<String, Object>();
+		simulationSettings = new TreeMap<String, Object>();
 		
 		filepath = source.getAbsolutePath();
 		
@@ -38,6 +39,10 @@ public class SimulationConfiguration {
 			
 			//Split the line into two tokens: The value and the key
 			token = line.split("=");
+			
+			//Remove trailing and leading whitespace
+			token[KEY]= token[KEY].trim();
+			token[VALUE] = token[VALUE].trim();
 			
 			//Find out what kind of value key is. Tries for double, if it fails, tries for int, if that also fails, leaves it as a String
 			try {
@@ -74,8 +79,11 @@ public class SimulationConfiguration {
 	public int getCheckpointInterval() {
 		return (int) simulationSettings.get("CheckpointInterval");
 	}
-	public double getMovementMultiplier() {
-		return (double) simulationSettings.get("MovementMultiplier");
+	public double getForceMultiplier() {
+		if(isType(Integer.class, simulationSettings.get("ForceMultiplier")))
+			return (double)((int)simulationSettings.get("ForceMultiplier"));
+		else
+			return (double) simulationSettings.get("ForceMultiplier");
 	}
 	public int getPlaneWidth() {
 		return (int) simulationSettings.get("PlaneWidth");
@@ -123,5 +131,12 @@ public class SimulationConfiguration {
 			s+= " ";
 		
 		return s;
+	}
+	
+	private static boolean isType(@SuppressWarnings("rawtypes") Class cls, Object value) {
+		if(cls == value.getClass())
+			return true;
+		
+		return false;
 	}
 }
