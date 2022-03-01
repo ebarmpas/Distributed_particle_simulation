@@ -3,8 +3,9 @@
  * They are a collection of vectors, whose job it is to keep track of location, velocity, acceleration, and a species.
  * 
  */
-
+package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Particle implements Serializable{
 	
@@ -15,7 +16,7 @@ public class Particle implements Serializable{
 	private int species;
 	
 	
-	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically
+	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically.
 	public Particle() {
 
 	}
@@ -30,7 +31,7 @@ public class Particle implements Serializable{
 	}
 
 
-	//Add the acceleration to the velocity, and the velocity to the acceleration
+	//Add the acceleration to the velocity, and the velocity to the acceleration.
 	public void step(int width, int height) {
 
 		velocity.add(acceleration);
@@ -38,13 +39,13 @@ public class Particle implements Serializable{
 		location.mod(width, height);
 	}
 	
-	//Set acceleration to zero, used at the beginning of each step
+	//Set acceleration to zero, used at the beginning of each step.
 	public void resetAcc() {
 		acceleration.setX(0);
 		acceleration.setY(0);
 	}
 	
-	//Add to the acceleration
+	//Add to the acceleration.
 	public void applyForce(Vector2D force) {
 		acceleration.add(force);
 	}
@@ -95,5 +96,26 @@ public class Particle implements Serializable{
 
 	public void setSpecies(int species) {
 		this.species = species;
+	}
+
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(acceleration, location, species, velocity);
+	}
+
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Particle other = (Particle) obj;
+		return Objects.equals(acceleration, other.acceleration) && Objects.equals(location, other.location)
+				&& species == other.species && Objects.equals(velocity, other.velocity);
 	}	
 }

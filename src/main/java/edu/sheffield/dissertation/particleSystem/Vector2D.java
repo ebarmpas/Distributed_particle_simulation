@@ -1,3 +1,4 @@
+package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -56,8 +57,8 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 	
 	public void div(double c) {
 		if(c != 0) {
-			x *= c;
-			y *= c;
+			x /= c;
+			y /= c;
 		}	
 	}
 
@@ -67,6 +68,9 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 	
 	public double magSq() {
 		return Math.pow(x,2) + Math.pow(y,2);
+	}
+	public double distSq(Vector2D other) {
+		return Math.pow(this.x - other.getX(), 2) + Math.pow(this.y - other.getY(),2);
 	}
 	public void limit(double lim) {
 		if(x > lim)
