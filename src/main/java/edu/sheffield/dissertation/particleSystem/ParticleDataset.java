@@ -6,7 +6,6 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.spark.api.java.function.ForeachFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -17,7 +16,7 @@ public class ParticleDataset {
 
 	//Holds all the particles for the simulation.
 	private Dataset<Particle> particles;	
-	private SimulationConfiguration simConf;
+	private SimulationConfiguration simConf; 
 	//Initialize the dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
 	public ParticleDataset(Dataset<String> source, SimulationConfiguration sc) {
 		
@@ -27,13 +26,20 @@ public class ParticleDataset {
 			//Split the line into fields that can be parsed and passed to the particle constructor.
 			String[] fields = f.split(" ");
 			
-			//Parse the fields into the appropriate data type to instantiate the Particle Object
-			return new Particle(new Vector2D(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y])),
-								new Vector2D(0,0), 
-								new Vector2D(0,0), 
-								Integer.parseInt(fields[SPECIES]));
+			//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
+			String sid = Long.valueOf(System.nanoTime()).toString();
+			sid += Long.valueOf(System.currentTimeMillis());
+			sid += Long.valueOf((long) (Math.random() * 1000000000));
 			
-		
+			//Parse the fields into the appropriate data type to instantiate the Particle Object
+			return new Particle(sid,
+								new Vector2D(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y])),
+								new Vector2D(0, 0), 
+								new Vector2D(0, 0), 
+								Integer.parseInt(fields[SPECIES]), 
+								1D, 1D, 1D, 5);
+			
+			
 		}, Encoders.bean(Particle.class)).cache();
 		
 		//Delete the old String dataset after we are done.
@@ -46,21 +52,15 @@ public class ParticleDataset {
 	public void show() {
 		particles.show();
 	}
-	//Wrapper function that includes the two parts of every step.
-	public void step(ParticleAccumulator newParticles) {
-		List<Particle> p = particles.collectAsList();
-		movementStep(p);
-		lifeAndDeathStep(p, newParticles);
-	}
-	//Calculates the movement of the particles by updating their position, velocity and acceleration.
+	//Calculates the reproduction and movement of the particles by updating their position, velocity and acceleration.
 	//Currently there are two forces at play: attraction, which happens between particles of the same species and repulsion, which happens between particles of different species.
-
-	private void movementStep(List<Particle> p) {
+	//Reproduction is done by comparing each particle with every other particle.
+	public void step(ParticleAccumulator newParticles) {
 		double multiplier = simConf.getForceMultiplier();
 		int width = simConf.getPlaneWidth();
 		int height  = simConf.getPlaneHeight();
 		
-		
+		List<Particle> p = particles.collectAsList();
 		//Iterates through all the particles and transforms them.
 		particles = particles.map((MapFunction<Particle, Particle>) (particle)->{
 			
@@ -69,7 +69,14 @@ public class ParticleDataset {
 
 			//Iterate through each particle and calculate the forces necessary.
 			p.forEach((elem) ->{
-				
+				//The two particles need to be of the same species, close enough (under a distance of 5) and not the same particle.
+				if(particle.canReproduce(elem)) {
+					//The velocity and acceleration of the particle is zero, but the species is the same as the parents' and the location is the average of its parents' .
+					Vector2D loc = new Vector2D(particle.getLocation());
+					loc.add(elem.getLocation());
+					loc.div(2);
+					newParticles.add(Particle.reproduce(particle, elem));
+				}
 				//Calculate the distance for x and y. 
 				Vector2D distance = Vector2D.sub(elem.getLocation(), particle.getLocation());
 				Vector2D force = new Vector2D();
@@ -116,28 +123,10 @@ public class ParticleDataset {
 		
 	}
 	
-	//Calculate all new particles
-	private void lifeAndDeathStep(List<Particle> p, ParticleAccumulator newParticles) {
-		
-		//Iterate through the particles and check their location against every other particle.
-		//If they are close enough, add a new particle to the accumulator.
-		particles.foreach((ForeachFunction<Particle>) (particle) ->{
-			
-			p.forEach((elem)->{
-				//The two particles need to be of the same species, close enough (under a distance of 5) and not the same particle.
-				if(particle.sameSpecies(elem) && particle.getLocation().distSq(elem.getLocation()) < 5 && !particle.getLocation().equals(elem.getLocation())) {
-					//The velocity and acceleration of the particle is zero, but the species is the same as the parents' and the location is the average of its parents' .
-					Vector2D loc = new Vector2D(particle.getLocation());
-					loc.add(elem.getLocation());
-					loc.div(2);
-					newParticles.add(new Particle(loc, new Vector2D(), new Vector2D(), particle.getSpecies()));
-				}		
-			});
-		});
-	}
-	
 	public void addNewParticles(Dataset<Particle> np) {
 		particles = particles.union(np);
+		
+		np.unpersist();
 	}
 	//Checkpoint the dataset. This has two purposes, out of which we are interested in the latter : local backup, and truncating the logical plan (ie force the lazy evaluations to happen).
 	//This is very important to save RAM and improve performance. Without it, the program crashes due to a stack overflow error.

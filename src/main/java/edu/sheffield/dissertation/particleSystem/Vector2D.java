@@ -2,6 +2,7 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
 import java.util.Objects;
 
+
 public class Vector2D implements Comparable<Vector2D>, Serializable{
 
 	private static final long serialVersionUID = 1L;
@@ -72,17 +73,7 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 	public double distSq(Vector2D other) {
 		return Math.pow(this.x - other.getX(), 2) + Math.pow(this.y - other.getY(),2);
 	}
-	public void limit(double lim) {
-		if(x > lim)
-			x = lim;
-		else if(x < lim * -1)
-			x = lim * -1;
-		
-		if(y > lim)
-			y = lim;
-		else if(y < lim * -1)
-			y = lim * -1;
-	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(x, y);
