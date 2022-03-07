@@ -6,6 +6,7 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
@@ -37,7 +38,7 @@ public class ParticleDataset {
 								new Vector2D(0, 0), 
 								new Vector2D(0, 0), 
 								Integer.parseInt(fields[SPECIES]), 
-								1D, 1D, 1D, 5);
+								1D, 1D, 1D, 5,5);
 			
 			
 		}, Encoders.bean(Particle.class)).cache();
@@ -66,9 +67,11 @@ public class ParticleDataset {
 			
 			//Reset the acceleration of the particle for this step.
 			particle.resetAcc();
-
-			//Iterate through each particle and calculate the forces necessary.
+			
+			//Check if the particle is dead, if not, iterate through each particle and calculate breeding and forces.
+			if(!particle.isDead())
 			p.forEach((elem) ->{
+					
 				//The two particles need to be of the same species, close enough (under a distance of 5) and not the same particle.
 				if(particle.canReproduce(elem)) {
 					//The velocity and acceleration of the particle is zero, but the species is the same as the parents' and the location is the average of its parents' .
@@ -80,32 +83,32 @@ public class ParticleDataset {
 				//Calculate the distance for x and y. 
 				Vector2D distance = Vector2D.sub(elem.getLocation(), particle.getLocation());
 				Vector2D force = new Vector2D();
-				
+					
 				//Since the plane is a sphere, and points can be connected from two directions, we need to find the one that is closer and use that.
 				if(Math.abs(distance.getX()) > (width - Math.abs(distance.getX()))) 
 					if(Math.signum(distance.getX()) == 1)
 						distance.setX(distance.getX() - width);
 					else
 						distance.setX(width + distance.getX());
-				
+					
 				if(Math.abs(distance.getY()) > (height - Math.abs(distance.getY()))) 
 					if(Math.signum(distance.getY()) == 1)
 						distance.setY(distance.getY() - height);
 					else
 						distance.setY(distance.getY() + height);
-				
+					
 				//If the distance is not zero, calculate the force.
 				if(distance.getX() != 0)
 					force.setX(distance.getX()/(distance.getX()*distance.getX()));
-				
+					
 				if(distance.getY() != 0)
 					force.setY(distance.getY()/(distance.getY()*distance.getY()));
-
-					
+	
+						
 				//Attraction and repulsion are opposites, so check whether the two particles are of a different species and invert the force if that's the case.
 				if(!(particle.sameSpecies(elem))) 
 					force.mult(-1);
-
+	
 				force.mult(multiplier);
 				//Finally, apply the force and then proceed to the next particle.
 				particle.applyForce(force);
@@ -114,6 +117,9 @@ public class ParticleDataset {
 			return particle;
 			
 		}, Encoders.bean(Particle.class));
+		
+		//Only return particles who are alive.
+		particles = particles.filter((FilterFunction<Particle>) (particle) -> !particle.isDead());
 		
 		//Apply all the changes that were calculated previously. This is done separately to make sure everything is done uniformly.
 		particles = particles.map((MapFunction<Particle, Particle>) (particle) -> {
@@ -136,7 +142,6 @@ public class ParticleDataset {
 	
 	//Write the current state of the dataset onto a file.
 	public void output(int step, String outputPath) throws IOException {
-		particles.show();
 		particles.write().json(outputPath + "/steps/step" + step);
 	}
 }

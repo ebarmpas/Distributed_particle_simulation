@@ -19,13 +19,16 @@ public class Particle implements Serializable{
 	private double forceMultiplier;
 	private int maxLibido;
 	private int currentLibido;
+	private int maxAge;
+	private int currentAge;
+	private boolean isDead;
 	
 	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically.
 	public Particle() {
 	
 	}
 	
-	public Particle(String id, Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido) {
+	public Particle(String id, Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge) {
 		this.id = id;
 		this.location = location;
 		this.velocity = velocity;
@@ -36,6 +39,9 @@ public class Particle implements Serializable{
 		this.forceMultiplier = forceMultiplier;
 		this.maxLibido = maxLibido;
 		currentLibido = 0;
+		this.maxAge = maxAge;
+		currentAge = 0;
+		isDead = false;
 	}
 
 
@@ -47,7 +53,12 @@ public class Particle implements Serializable{
 		location.add(velocity);
 		location.mod(width, height);
 		
+		
 		currentLibido++;
+		currentAge++;
+		
+		if(currentAge >= maxAge)
+			isDead = true;
 	}
 	
 	//Set acceleration to zero, used at the beginning of each step.
@@ -89,7 +100,7 @@ public class Particle implements Serializable{
 		double repulsionMult = (p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2;
 		double forceMult = (p1.getForceMultiplier() + p2.getForceMultiplier()) / 2;
 		int maxLib = Math.round((p1.getMaxLibido() + p2.getMaxLibido()) / 2);
-		
+		int maxAge  =Math.round((p1.getMaxAge() + p2.getMaxAge()) / 2);
 		//Make the libido zero.
 		p1.setCurrentLibido(0);
 		p2.setCurrentLibido(0);
@@ -105,14 +116,13 @@ public class Particle implements Serializable{
 				new Vector2D(),
 				p1.getSpecies(),
 				attractionMult, repulsionMult,
-				forceMult, maxLib);
+				forceMult, maxLib, maxAge);
 	}
-
 	
 	@Override
 	public String toString() {
-		return location + " " + velocity + " " + acceleration + " " + species + " " + attractionMultiplier + " "
-				+ repulsionMultiplier + " " + forceMultiplier + " " + maxLibido + " " + currentLibido + " " + id;
+		return location + " " + velocity + " " + acceleration + " " + species + " " + attractionMultiplier + " "+ 
+		repulsionMultiplier + " " + forceMultiplier + " " + maxLibido + " " + currentLibido + " " + currentAge +" " + maxAge+ " "  + id;
 	}
 	
 	public boolean isSame(Particle other) {
@@ -199,5 +209,29 @@ public class Particle implements Serializable{
 
 	public void setId(String id) {
 		this.id = id;
+	}
+
+	public int getMaxAge() {
+		return maxAge;
+	}
+
+	public void setMaxAge(int maxAge) {
+		this.maxAge = maxAge;
+	}
+
+	public int getCurrentAge() {
+		return currentAge;
+	}
+
+	public void setCurrentAge(int currentAge) {
+		this.currentAge = currentAge;
+	}
+
+	public boolean isDead() {
+		return isDead;
+	}
+
+	public void setDead(boolean isDead) {
+		this.isDead = isDead;
 	}
 }
