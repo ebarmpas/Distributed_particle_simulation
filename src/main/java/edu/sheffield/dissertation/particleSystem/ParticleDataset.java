@@ -13,33 +13,32 @@ import org.apache.spark.sql.Encoders;
 
 public class ParticleDataset {
 
-	final static int X =0, Y= 1, SPECIES = 6;
+	//The fields that each particle has, each has a unique position in the input string array
+	final static int LOCATION_X = 0, LOCATION_Y = 1, VELOCITY_X = 2, VELOCITY_Y = 3, ACCELERATION_X = 4, ACCELERATION_Y = 5;
+	final static int ATTRACTION_MULTIPLIER = 7, REPULSION_MULTIPLIER = 8, FORCE_MULTIPLIER = 9;
+	final static int SPECIES = 6, MAX_LIBIDO = 10, MAX_AGE = 11;
 
 	//Holds all the particles for the simulation.
 	private Dataset<Particle> particles;	
 	private SimulationConfiguration simConf; 
 	//Initialize the dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
 	public ParticleDataset(Dataset<String> source, SimulationConfiguration sc) {
-		
+ 
+		source = source.filter((FilterFunction<String>) (token) -> !(token.trim().length() == 0 || token.contains("//")));
+		source.show();
 		//Map the Strings into particles.
-		particles = source.map((MapFunction<String, Particle>) f -> {
+		particles = source.map((MapFunction<String, Particle>) token -> {
 			
 			//Split the line into fields that can be parsed and passed to the particle constructor.
-			String[] fields = f.split(" ");
-			
-			//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
-			String sid = Long.valueOf(System.nanoTime()).toString();
-			sid += Long.valueOf(System.currentTimeMillis());
-			sid += Long.valueOf((long) (Math.random() * 1000000000));
-			
+			String[] fields = token.split(" ");
+
 			//Parse the fields into the appropriate data type to instantiate the Particle Object
-			return new Particle(sid,
-								new Vector2D(Double.parseDouble(fields[X]), Double.parseDouble(fields[Y])),
-								new Vector2D(0, 0), 
-								new Vector2D(0, 0), 
-								Integer.parseInt(fields[SPECIES]), 
-								1D, 1D, 1D, 5,5);
-			
+			return new Particle(new Vector2D(Double.parseDouble(fields[LOCATION_X].trim()), Double.parseDouble(fields[LOCATION_Y].trim())),
+								new Vector2D(Double.parseDouble(fields[VELOCITY_X].trim()), Double.parseDouble(fields[VELOCITY_Y].trim())), 
+								new Vector2D(Double.parseDouble(fields[ACCELERATION_X].trim()), Double.parseDouble(fields[ACCELERATION_Y].trim())), 
+								Integer.parseInt(fields[SPECIES].trim()),
+								Double.parseDouble(fields[ATTRACTION_MULTIPLIER].trim()), Double.parseDouble(fields[REPULSION_MULTIPLIER].trim()),Double.parseDouble(fields[FORCE_MULTIPLIER].trim()),
+								Integer.parseInt(fields[MAX_LIBIDO].trim()),Integer.parseInt(fields[MAX_AGE].trim()));
 			
 		}, Encoders.bean(Particle.class)).cache();
 		

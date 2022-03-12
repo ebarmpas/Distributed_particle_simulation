@@ -28,8 +28,12 @@ public class Particle implements Serializable{
 	
 	}
 	
-	public Particle(String id, Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge) {
-		this.id = id;
+	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge) {
+		//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
+		this.id = Long.valueOf(System.nanoTime()).toString();
+		id += Long.valueOf(System.currentTimeMillis());
+		id += Long.valueOf((long) (Math.random() * 1000000000));
+		
 		this.location = location;
 		this.velocity = velocity;
 		this.acceleration = acceleration;
@@ -104,14 +108,8 @@ public class Particle implements Serializable{
 		//Make the libido zero.
 		p1.setCurrentLibido(0);
 		p2.setCurrentLibido(0);
-		
-		//Create a new unique id for the new particle.
-		String sid = Long.valueOf(System.nanoTime()).toString();
-		sid += Long.valueOf(System.currentTimeMillis());
-		sid += Long.valueOf((long) (Math.random() * 1000000000));
-		
-		return new Particle(sid,
-				loc,
+
+		return new Particle(loc,
 				new Vector2D(),
 				new Vector2D(),
 				p1.getSpecies(),
