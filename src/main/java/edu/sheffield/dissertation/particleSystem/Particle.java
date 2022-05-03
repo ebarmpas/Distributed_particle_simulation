@@ -51,31 +51,55 @@ public class Particle implements Serializable{
 
 
 	//Add the acceleration to the velocity, and the velocity to the acceleration.
-	public void step(int width, int height) {
+	public void step() {
 
 		velocity.add(acceleration);
 		location.add(velocity);
-		location.mod(width, height);
-		
-		
+		location.mod(1000, 1000);
+
 		currentLibido++;
 		currentAge++;
 		
 		if(currentAge >= maxAge)
 			isDead = true;
 	}
+
+	public void calculateAttraction(Particle other) {
+		Vector2D distance = Vector2D.sub(other.location, this.location);
+		
+		if(Math.abs(distance.getX()) > 500)
+			distance.setX(distance.getX() - (1000 * Math.signum(distance.getX())));
+
+		if(Math.abs(distance.getY()) > 500)
+			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-	//Set acceleration to zero, used at the beginning of each step.
-	public void resetAcc() {
-		acceleration.setX(0);
-		acceleration.setY(0);
+		distance.mult(this.attractionMultiplier * 0.00005);
+		
+		applyForce(distance);
+		
+	}
+	public void calculateRepulsion(Particle other) {
+		Vector2D distance = Vector2D.sub(this.location, other.location);
+		
+		if(Math.abs(distance.getX()) > 500)
+			distance.setX(distance.getX() - (1000 * Math.signum(distance.getX())));
+
+		if(Math.abs(distance.getY()) > 500)
+			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
+	
+		distance.mult(this.repulsionMultiplier * 0.00005);
+		
+		applyForce(distance);
 	}
 	
 	//Add to the acceleration.
 	public void applyForce(Vector2D force) {
 		acceleration.add(force);
 	}
-	
+	public void resetAcc() {
+		acceleration.setX(0);
+		acceleration.setY(0);
+	}
 	//Checks the reproductive criteria: Sufficient libido for both parents, same species, small distance and ensuring they are different particles (different ids).
 	public boolean canReproduce(Particle other) {
 

@@ -93,10 +93,32 @@ public class SimulationConfiguration implements Serializable{
 	public int getPlaneHeight() {
 		return (int) simulationSettings.get("PlaneHeight");
 	}
-	public double getReproductionChance() {
-		return getDouble("ReproductionChance");
+	
+	public int getSpeciesNumber() {
+		return (int) simulationSettings.get("SpeciesNumber");
+	}
+	public int getSpeciesPopulation(int species) {
+		return (int) simulationSettings.get("SpeciesPopulation" + species);
+	}
+	public double getSpeciesAttractionMultiplier(int species) {
+		return  getDouble("SpeciesAttractionMultiplier" + species);
+	}
+	public double getSpeciesRepulsionMultiplier(int species) {
+		return  getDouble("SpeciesRepulsionMultiplier" + species);
+	}
+	public double getSpeciesForceMultiplier(int species) {
+		return  getDouble("SpeciesForceMultiplier" + species);
+	}
+	public int getSpeciesMaxLibidoPopulation(int species) {
+		return (int) simulationSettings.get("SpeciesMaxLibido" + species);
+	}
+	public int getSpeciesMaxAge(int species) {
+		return (int) simulationSettings.get("SpeciesMaxAge" + species);
 	}
 	
+	public int getSeed() {
+		return (int) simulationSettings.get("Seed");
+	}
 	//Prints the contents of the configuration file as a table.
 	public void print() {
 		final int margin = 4;

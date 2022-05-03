@@ -3,11 +3,14 @@
  * Its job is to simply setup the Spark environment and call methods.
  */
 package edu.sheffield.dissertation.particleSystem;
+
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Random;
 
 public class ParticleSimulation {
 	
@@ -32,8 +35,28 @@ public class ParticleSimulation {
 		spark.sparkContext().register(newParticles, "NewParticles");
 		
 		//Instantiate the business logic.
-		pd = new ParticleDataset(spark.read().textFile(simConf.getInputDir()), simConf);
+		
+		{
+			ArrayList<Particle> p;
+			int numberOfParticles = 0; 
+			Random r = new Random(simConf.getSeed());
 			
+			for(int i = 0; i < simConf.getSpeciesNumber(); i++)
+				numberOfParticles += simConf.getSpeciesPopulation(i);
+			
+			p = new ArrayList<Particle>(numberOfParticles);
+			
+			for(int i = 0; i < simConf.getSpeciesNumber(); i++)
+				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++)
+					p.add(new Particle(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
+							new Vector2D(r.nextDouble(), r.nextDouble()),
+							new Vector2D(r.nextDouble(), r.nextDouble()),
+							i, simConf.getSpeciesAttractionMultiplier(i), simConf.getSpeciesRepulsionMultiplier(i), simConf.getSpeciesForceMultiplier(i),
+							simConf.getSpeciesMaxLibidoPopulation(i), simConf.getSpeciesMaxAge(i)));
+			
+			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
+		}
+		
 		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result .
 		for(int i = 0; i < simConf.getStepNumber(); i++){
 			
@@ -53,7 +76,7 @@ public class ParticleSimulation {
 			//Reset the accumulator for the next step.
 			newParticles.reset();
 			
-			System.out.println("\n\nSTEP " + i + " HAS BEEN COMPLETED \n\n");
+			System.out.println("\nSTEP " + i + " HAS BEEN COMPLETED\n\n");
 		}
 
 		spark.stop();
