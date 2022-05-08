@@ -22,7 +22,7 @@ public class Particle implements Serializable{
 	private int maxAge;
 	private int currentAge;
 	private boolean isDead;
-	
+		
 	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically.
 	public Particle() {
 	
@@ -51,8 +51,10 @@ public class Particle implements Serializable{
 
 
 	//Add the acceleration to the velocity, and the velocity to the acceleration.
-	public void step() {
+	public void step(double mult) {
 
+		acceleration.mult(mult);
+		
 		velocity.add(acceleration);
 		location.add(velocity);
 		location.mod(1000, 1000);
@@ -73,8 +75,8 @@ public class Particle implements Serializable{
 		if(Math.abs(distance.getY()) > 500)
 			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-		distance.mult(this.attractionMultiplier * 0.00005);
-		
+		distance.mult(this.attractionMultiplier);
+
 		applyForce(distance);
 		
 	}
@@ -87,7 +89,7 @@ public class Particle implements Serializable{
 		if(Math.abs(distance.getY()) > 500)
 			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-		distance.mult(this.repulsionMultiplier * 0.00005);
+		distance.mult(this.repulsionMultiplier);
 		
 		applyForce(distance);
 	}
@@ -117,22 +119,22 @@ public class Particle implements Serializable{
 
 	//The reproduction algorithm. The location and multipliers are averaged. The species remains the same as the parents.
 	//The velocity and acceleration are zero. New unique id is generated too.
-	public static Particle reproduce(Particle p1, Particle p2) {
+	public static Particle reproduce(Particle p1, Particle p2, double variance) {
 		
 		//Calculate the location.
 		Vector2D loc = Vector2D.add(p1.getLocation(), p2.getLocation());
 		loc.div(2);
-		
+
 		//calculate the multipliers.
-		double attractionMult = (p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2;
-		double repulsionMult = (p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2;
-		double forceMult = (p1.getForceMultiplier() + p2.getForceMultiplier()) / 2;
-		int maxLib = Math.round((p1.getMaxLibido() + p2.getMaxLibido()) / 2);
-		int maxAge  =Math.round((p1.getMaxAge() + p2.getMaxAge()) / 2);
+		double attractionMult = ((p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+		double repulsionMult = ((p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+		double forceMult = ((p1.getForceMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+		int maxLib = (int) Math.round(((p1.getMaxLibido() + p2.getMaxLibido()) / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int maxAge = (int) Math.round(((p1.getMaxAge() + p2.getMaxAge()) / 2) * (1 - (variance / 2) + Math.random() * variance));
 		//Make the libido zero.
 		p1.setCurrentLibido(0);
 		p2.setCurrentLibido(0);
-
+		
 		return new Particle(loc,
 				new Vector2D(),
 				new Vector2D(),

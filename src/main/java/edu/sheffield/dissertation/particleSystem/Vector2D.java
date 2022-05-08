@@ -80,7 +80,10 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 	public double distSq(Vector2D other) {
 		return Math.pow(this.x - other.getX(), 2) + Math.pow(this.y - other.getY(),2);
 	}
-
+	public void inverse() {
+		x = 1 / x;
+		y = 1 / y;
+	}
 	@Override
 	public int hashCode() {
 		return Objects.hash(x, y);

@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class ParticleSimulation {
-	
+
 	public static void main(String[] args) throws IOException {
 		//simConf holds execution information.
 		SimulationConfiguration simConf = new SimulationConfiguration(new File(args[0]));
@@ -30,12 +30,10 @@ public class ParticleSimulation {
 		//Set the checkpoint directory.
 		spark.sparkContext().setCheckpointDir(simConf.getCheckpointDir());
 		
-	
 		//Register the accumulator to spark.
 		spark.sparkContext().register(newParticles, "NewParticles");
 		
 		//Instantiate the business logic.
-		
 		{
 			ArrayList<Particle> p;
 			int numberOfParticles = 0; 
@@ -46,14 +44,25 @@ public class ParticleSimulation {
 			
 			p = new ArrayList<Particle>(numberOfParticles);
 			
-			for(int i = 0; i < simConf.getSpeciesNumber(); i++)
-				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++)
+			for(int i = 0; i < simConf.getSpeciesNumber(); i++) {
+				double variance = simConf.getSpeciesStandardDeviation(i);
+				double attractionMultiplier = simConf.getSpeciesAttractionMultiplier(i);
+				double repulsionMultiplier = simConf.getSpeciesRepulsionMultiplier(i);
+				double forceMultiplier = simConf.getSpeciesForceMultiplier(i);
+				double libido = simConf.getSpeciesMaxLibido(i);
+				double age = simConf.getSpeciesMaxAge(i);
+				
+				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++) 
+					
 					p.add(new Particle(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
 							new Vector2D(r.nextDouble(), r.nextDouble()),
-							new Vector2D(r.nextDouble(), r.nextDouble()),
-							i, simConf.getSpeciesAttractionMultiplier(i), simConf.getSpeciesRepulsionMultiplier(i), simConf.getSpeciesForceMultiplier(i),
-							simConf.getSpeciesMaxLibidoPopulation(i), simConf.getSpeciesMaxAge(i)));
-			
+							new Vector2D(r.nextDouble(), r.nextDouble()),i,
+							attractionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
+							repulsionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
+							forceMultiplier * (1 - (variance / 2) + r.nextDouble() * variance),
+							(int) Math.round(libido * (1 - (variance / 2) + r.nextDouble() * variance)),
+							(int) Math.round(age * (1 - (variance / 2) + r.nextDouble() * variance))));
+			}
 			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
 		}
 		
@@ -67,9 +76,12 @@ public class ParticleSimulation {
 			pd.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Particle.class)));
 
 			//Check the checkpoint interval and checkpoint if needed.
-			if((i % simConf.getCheckpointInterval()) == 0)
+			if(i % simConf.getCheckpointInterval() == 0)
 				pd.checkpoint();
 
+			if(i % simConf.getPartitioningInterval() == 0)
+				pd.coalesce(simConf.getPartitionNumber());
+			
 			//Output the particles into a file.
 			pd.output(i, simConf.getOutputDir());
 			
@@ -80,6 +92,7 @@ public class ParticleSimulation {
 		}
 
 		spark.stop();
+		
 	}
 
 }
