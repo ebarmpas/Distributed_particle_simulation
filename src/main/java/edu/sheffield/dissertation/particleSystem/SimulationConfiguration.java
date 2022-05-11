@@ -106,9 +106,6 @@ public class SimulationConfiguration implements Serializable{
 	public String getCheckpointDir() {
 		return (String) simulationSettings.get("CheckpointDir");
 	}
-	public String getInputDir() {
-		return (String) simulationSettings.get("InputDir");
-	}	
 	public String getOutputDir() {
 		return (String) simulationSettings.get("OutputDir");
 	}
@@ -117,12 +114,6 @@ public class SimulationConfiguration implements Serializable{
 	}
 	public double getForceMultiplier() {
 		return getDouble("ForceMultiplier");
-	}
-	public int getPlaneWidth() {
-		return (int) simulationSettings.get("PlaneWidth");
-	}
-	public int getPlaneHeight() {
-		return (int) simulationSettings.get("PlaneHeight");
 	}
 	public int getSpeciesNumber() {
 		return (int) simulationSettings.get("SpeciesNumber");
@@ -145,8 +136,14 @@ public class SimulationConfiguration implements Serializable{
 	public int getSpeciesMaxAge(int species) {
 		return (int) simulationSettings.get("SpeciesMaxAge" + species);
 	}
-	public double getSpeciesStandardDeviation(int species) {
-		return getDouble("SpeciesStandardDeviation" + species);
+	public double getSpeciesVariance(int species) {
+		return getDouble("SpeciesVariance" + species);
+	}
+	public double getSpeciesHealth(int species) {
+		return (int) simulationSettings.get("SpeciesHealth" + species);
+	}
+	public int getSpeciesDamage(int species) {
+		return (int) simulationSettings.get("SpeciesDamage" + species);
 	}
 	public int getSeed() {
 		return (int) simulationSettings.get("Seed");

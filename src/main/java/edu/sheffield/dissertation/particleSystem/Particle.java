@@ -10,17 +10,23 @@ public class Particle implements Serializable{
 	
 	private static final long serialVersionUID = 3L;
 	private String id;
+	
 	private Vector2D location;
 	private Vector2D velocity;
 	private Vector2D acceleration;
+	
 	private int species;
+	
 	private double attractionMultiplier;
 	private double repulsionMultiplier;
 	private double forceMultiplier;
-	private int maxLibido;
-	private int currentLibido;
-	private int maxAge;
-	private int currentAge;
+	
+	private int damage;
+	
+	private int currentLibido, maxLibido;
+	private int currentAge, maxAge;
+	private int currentHealth, maxHealth;
+	
 	private boolean isDead;
 		
 	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically.
@@ -28,7 +34,7 @@ public class Particle implements Serializable{
 	
 	}
 	
-	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge) {
+	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge, int maxHealth, int damage) {
 		//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
 		this.id = Long.valueOf(System.nanoTime()).toString();
 		id += Long.valueOf(System.currentTimeMillis());
@@ -41,10 +47,17 @@ public class Particle implements Serializable{
 		this.attractionMultiplier = attractionMultiplier;
 		this.repulsionMultiplier = repulsionMultiplier;
 		this.forceMultiplier = forceMultiplier;
+		
+		this.damage = damage;
+		
 		this.maxLibido = maxLibido;
-		currentLibido = 0;
 		this.maxAge = maxAge;
+		this.maxHealth = maxHealth;
+		
 		currentAge = 0;
+		currentHealth = this.maxHealth;
+		maxLibido = 0;
+		
 		isDead = false;
 	}
 
@@ -59,16 +72,22 @@ public class Particle implements Serializable{
 		location.add(velocity);
 		location.mod(1000, 1000);
 
-		currentLibido++;
-		currentAge++;
 		
-		if(currentAge >= maxAge)
+		if(currentAge >= maxAge || currentHealth <= 0)
 			isDead = true;
+		else {
+			if(currentLibido < maxLibido)
+				currentLibido++;
+			if(currentHealth <  maxHealth)
+				currentHealth++;
+			
+			currentAge++;
+		}
 	}
 
 	public void calculateAttraction(Particle other) {
 		Vector2D distance = Vector2D.sub(other.location, this.location);
-		
+
 		if(Math.abs(distance.getX()) > 500)
 			distance.setX(distance.getX() - (1000 * Math.signum(distance.getX())));
 
@@ -105,10 +124,10 @@ public class Particle implements Serializable{
 	//Checks the reproductive criteria: Sufficient libido for both parents, same species, small distance and ensuring they are different particles (different ids).
 	public boolean canReproduce(Particle other) {
 
-		return (this.currentLibido >= this.maxLibido) && 
-				(other.getCurrentLibido() >= other.getMaxLibido()) && 
+		return (currentLibido >= maxLibido) && 
+				(other.currentLibido >= other.maxLibido) && 
 				(sameSpecies(other)) && 
-				(this.location.distSq(other.getLocation()) <= 5) && 
+				(this.getLocation().distSq(other.getLocation()) <= 5) && 
 				(!this.isSame(other));
 	}
 	
@@ -129,133 +148,165 @@ public class Particle implements Serializable{
 		double attractionMult = ((p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double repulsionMult = ((p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double forceMult = ((p1.getForceMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		int maxLib = (int) Math.round(((p1.getMaxLibido() + p2.getMaxLibido()) / 2) * (1 - (variance / 2) + Math.random() * variance));
-		int maxAge = (int) Math.round(((p1.getMaxAge() + p2.getMaxAge()) / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int libido = (int) Math.round((p1.getMaxLibido() + p2.getMaxLibido() / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int age = (int) Math.round((p1.getMaxAge() + p2.getMaxAge() / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int health = (int) Math.round(((p1.getMaxHealth() + p2.getMaxHealth()) / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int damage =  (int) Math.round(((p1.getDamage() + p2.getDamage()) / 2) * (1 - (variance / 2) + Math.random() * variance));
 		//Make the libido zero.
-		p1.setCurrentLibido(0);
-		p2.setCurrentLibido(0);
+//		p1.getLibido().reset();
+//		p2.getLibido().reset();
 		
 		return new Particle(loc,
 				new Vector2D(),
 				new Vector2D(),
 				p1.getSpecies(),
 				attractionMult, repulsionMult,
-				forceMult, maxLib, maxAge);
+				forceMult, libido, age, health, damage);
+	}
+	public boolean canAttack(Particle other) {
+		return this.getLocation().distSq(other.getLocation()) <= 2D; 
+	}
+	public void attack(Particle other) {
+		other.setCurrentHealth(other.getCurrentAge() - this.damage);	
 	}
 	
-	@Override
-	public String toString() {
-		return location + " " + velocity + " " + acceleration + " " + species + " " + attractionMultiplier + " "+ 
-		repulsionMultiplier + " " + forceMultiplier + " " + maxLibido + " " + currentLibido + " " + currentAge +" " + maxAge+ " "  + id;
-	}
-	
+
+
 	public boolean isSame(Particle other) {
 		//If two particles have the same id, they are the same particle.
 		return this.id.equals(other.getId());
 	}
-
 	//Standard getters and setters for all attributes. Needed by Spark.
-	public Vector2D getLocation() {
-		return location;
+
+	public String getId() {
+		return id;
 	}
 
-	public void setLocation(Vector2D location) {
-		this.location = location;
+	public Vector2D getLocation() {
+		return location;
 	}
 
 	public Vector2D getVelocity() {
 		return velocity;
 	}
 
-	public void setVelocity(Vector2D velocity) {
-		this.velocity = velocity;
-	}
-
 	public Vector2D getAcceleration() {
 		return acceleration;
-	}
-
-	public void setAcceleration(Vector2D acceleration) {
-		this.acceleration = acceleration;
 	}
 
 	public int getSpecies() {
 		return species;
 	}
 
-	public void setSpecies(int species) {
-		this.species = species;
-	}
-
 	public double getAttractionMultiplier() {
 		return attractionMultiplier;
-	}
-
-	public void setAttractionMultiplier(double attractionMultiplier) {
-		this.attractionMultiplier = attractionMultiplier;
 	}
 
 	public double getRepulsionMultiplier() {
 		return repulsionMultiplier;
 	}
 
-	public void setRepulsionMultiplier(double repulsionMultiplier) {
-		this.repulsionMultiplier = repulsionMultiplier;
-	}
-
 	public double getForceMultiplier() {
 		return forceMultiplier;
 	}
 
-	public void setForceMultiplier(double forceMultiplier) {
-		this.forceMultiplier = forceMultiplier;
+	public int getDamage() {
+		return damage;
 	}
 
-	public int getMaxLibido() {
-		return maxLibido;
-	}
-	
-	public void setMaxLibido(int maxLibido) {
-		this.maxLibido = maxLibido;
-	}	
-	
 	public int getCurrentLibido() {
 		return currentLibido;
 	}
 
-	public void setCurrentLibido(int currentLibido) {
-		this.currentLibido = currentLibido;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public int getMaxAge() {
-		return maxAge;
-	}
-
-	public void setMaxAge(int maxAge) {
-		this.maxAge = maxAge;
+	public int getMaxLibido() {
+		return maxLibido;
 	}
 
 	public int getCurrentAge() {
 		return currentAge;
 	}
 
-	public void setCurrentAge(int currentAge) {
-		this.currentAge = currentAge;
+	public int getMaxAge() {
+		return maxAge;
+	}
+
+	public int getCurrentHealth() {
+		return currentHealth;
+	}
+
+	public int getMaxHealth() {
+		return maxHealth;
 	}
 
 	public boolean isDead() {
 		return isDead;
 	}
 
+	public void setId(String id) {
+		this.id = id;
+	}
+
+	public void setLocation(Vector2D location) {
+		this.location = location;
+	}
+
+	public void setVelocity(Vector2D velocity) {
+		this.velocity = velocity;
+	}
+
+	public void setAcceleration(Vector2D acceleration) {
+		this.acceleration = acceleration;
+	}
+
+	public void setSpecies(int species) {
+		this.species = species;
+	}
+
+	public void setAttractionMultiplier(double attractionMultiplier) {
+		this.attractionMultiplier = attractionMultiplier;
+	}
+
+	public void setRepulsionMultiplier(double repulsionMultiplier) {
+		this.repulsionMultiplier = repulsionMultiplier;
+	}
+
+	public void setForceMultiplier(double forceMultiplier) {
+		this.forceMultiplier = forceMultiplier;
+	}
+
+	public void setDamage(int damage) {
+		this.damage = damage;
+	}
+
+	public void setCurrentLibido(int currentLibido) {
+		this.currentLibido = currentLibido;
+	}
+
+	public void setMaxLibido(int maxLibido) {
+		this.maxLibido = maxLibido;
+	}
+
+	public void setCurrentAge(int currentAge) {
+		this.currentAge = currentAge;
+	}
+
+	public void setMaxAge(int maxAge) {
+		this.maxAge = maxAge;
+	}
+
+	public void setCurrentHealth(int currentHealth) {
+		this.currentHealth = currentHealth;
+	}
+
+	public void setMaxHealth(int maxHealth) {
+		this.maxHealth = maxHealth;
+	}
+
 	public void setDead(boolean isDead) {
 		this.isDead = isDead;
 	}
+
+
+
+	
 }

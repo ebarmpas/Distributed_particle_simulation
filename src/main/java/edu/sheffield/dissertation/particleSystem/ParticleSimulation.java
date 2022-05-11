@@ -6,6 +6,7 @@ package edu.sheffield.dissertation.particleSystem;
 
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.util.LongAccumulator;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class ParticleSimulation {
 		ParticleDataset pd;
 		//Accumulates all new particles per step in the slave nodes so that they can be collected in the master node and joined to the particle dataset.
 		ParticleAccumulator newParticles = new ParticleAccumulator();
-		
+		LongAccumulator la = new LongAccumulator();
 		//Print the configuration.
 		simConf.print();
 		
@@ -32,6 +33,7 @@ public class ParticleSimulation {
 		
 		//Register the accumulator to spark.
 		spark.sparkContext().register(newParticles, "NewParticles");
+		spark.sparkContext().register(la, "la");
 		
 		//Instantiate the business logic.
 		{
@@ -45,23 +47,27 @@ public class ParticleSimulation {
 			p = new ArrayList<Particle>(numberOfParticles);
 			
 			for(int i = 0; i < simConf.getSpeciesNumber(); i++) {
-				double variance = simConf.getSpeciesStandardDeviation(i);
+				
+				double variance = simConf.getSpeciesVariance(i);
 				double attractionMultiplier = simConf.getSpeciesAttractionMultiplier(i);
 				double repulsionMultiplier = simConf.getSpeciesRepulsionMultiplier(i);
 				double forceMultiplier = simConf.getSpeciesForceMultiplier(i);
 				double libido = simConf.getSpeciesMaxLibido(i);
 				double age = simConf.getSpeciesMaxAge(i);
+				double health = simConf.getSpeciesHealth(i);
+				double attack = simConf.getSpeciesDamage(i);
 				
 				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++) 
-					
 					p.add(new Particle(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
-							new Vector2D(r.nextDouble(), r.nextDouble()),
-							new Vector2D(r.nextDouble(), r.nextDouble()),i,
-							attractionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
-							repulsionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
-							forceMultiplier * (1 - (variance / 2) + r.nextDouble() * variance),
-							(int) Math.round(libido * (1 - (variance / 2) + r.nextDouble() * variance)),
-							(int) Math.round(age * (1 - (variance / 2) + r.nextDouble() * variance))));
+						new Vector2D(r.nextDouble(), r.nextDouble()),
+						new Vector2D(r.nextDouble(), r.nextDouble()), i,
+						attractionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
+						repulsionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
+						forceMultiplier * (1 - (variance / 2) + r.nextDouble() * variance),
+						(int) Math.round(libido * (1 - (variance / 2) + r.nextDouble() * variance)),
+						(int) Math.round(age * (1 - (variance / 2) + r.nextDouble() * variance)),
+						(int) Math.round(health * (1 - (variance / 2) + r.nextDouble() * variance)),
+						(int) Math.round(attack * (1 - (variance / 2) + r.nextDouble() * variance))));
 			}
 			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
 		}
@@ -70,7 +76,7 @@ public class ParticleSimulation {
 		for(int i = 0; i < simConf.getStepNumber(); i++){
 			
 			//Step the simulation.
-			pd.step(newParticles);
+			pd.step(newParticles, la);
 			
 			//After the step is done, collect all the new particles into a dataset so they can be joined.
 			pd.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Particle.class)));
@@ -88,7 +94,8 @@ public class ParticleSimulation {
 			//Reset the accumulator for the next step.
 			newParticles.reset();
 			
-			System.out.println("\nSTEP " + i + " HAS BEEN COMPLETED\n\n");
+			System.out.println("\n\n" +la.value() + " STEP " + i + " HAS BEEN COMPLETED\n\n");
+			la.reset();
 		}
 
 		spark.stop();

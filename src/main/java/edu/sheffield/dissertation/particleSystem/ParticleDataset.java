@@ -11,6 +11,7 @@ import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
+import org.apache.spark.util.LongAccumulator;
 
 public class ParticleDataset implements Serializable{
 	
@@ -31,19 +32,26 @@ public class ParticleDataset implements Serializable{
 	//Calculates the reproduction and movement of the particles by updating their position, velocity and acceleration.
 	//Currently there are two forces at play: attraction, which happens between particles of the same species and repulsion, which happens between particles of different species.
 	//Reproduction is done by comparing each particle with every other particle.
-	public void step(ParticleAccumulator newParticles) {
+	public void step(ParticleAccumulator newParticles, LongAccumulator la) {
 		List<Particle> p = particles.collectAsList();
 		//Iterates through all the particles and transforms them.
 		particles = particles.map((MapFunction<Particle, Particle>) (particle)->{
+			la.add((long) particle.getCurrentHealth());
 
 			particle.resetAcc();
 			p.forEach((elem) ->{
-				if(particle.sameSpecies(elem) && !particle.isSame(elem)) {
-					if(particle.canReproduce(elem))
-						newParticles.add(Particle.reproduce(elem, particle, simConf.getSpeciesStandardDeviation(particle.getSpecies())));
-					particle.calculateAttraction(elem);
-				}else
-					particle.calculateRepulsion(elem);
+				if(!particle.isSame(elem))	
+					if(particle.sameSpecies(elem)) {
+						if(particle.canReproduce(elem))
+							newParticles.add(Particle.reproduce(elem, particle, simConf.getSpeciesVariance(particle.getSpecies())));
+						particle.calculateAttraction(elem);
+					}else {
+						if(particle.canAttack(elem)) {
+							particle.attack(elem);
+						}
+						particle.calculateRepulsion(elem);
+					}
+					
 			}); 
 
 			return particle;
