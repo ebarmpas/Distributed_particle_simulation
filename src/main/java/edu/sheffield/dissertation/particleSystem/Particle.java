@@ -21,11 +21,11 @@ public class Particle implements Serializable{
 	private double repulsionMultiplier;
 	private double forceMultiplier;
 	
-	private int damage;
+	private double damage;
 	
-	private int currentLibido, maxLibido;
-	private int currentAge, maxAge;
-	private int currentHealth, maxHealth;
+	private ParticleStat libido;
+	private ParticleStat age;
+	private ParticleStat health;
 	
 	private boolean isDead;
 		
@@ -34,7 +34,7 @@ public class Particle implements Serializable{
 	
 	}
 	
-	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, int maxLibido, int maxAge, int maxHealth, int damage) {
+	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, double libido, double age, double health, double damage) {
 		//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
 		this.id = Long.valueOf(System.nanoTime()).toString();
 		id += Long.valueOf(System.currentTimeMillis());
@@ -50,13 +50,19 @@ public class Particle implements Serializable{
 		
 		this.damage = damage;
 		
-		this.maxLibido = maxLibido;
-		this.maxAge = maxAge;
-		this.maxHealth = maxHealth;
+		this.libido = new ParticleStat(libido);
+		this.age = new ParticleStat(age);
+		this.health = new ParticleStat(health, health);
 		
-		currentAge = 0;
-		currentHealth = this.maxHealth;
-		maxLibido = 0;
+		this.libido.setMax(libido);
+		this.libido.setCurrent(0);
+		
+		this.age.setMax(age);
+		this.age.setCurrent(0);
+		
+		this.health.setMax(health);
+		this.health.setCurrent(health);
+		
 		
 		isDead = false;
 	}
@@ -73,15 +79,12 @@ public class Particle implements Serializable{
 		location.mod(1000, 1000);
 
 		
-		if(currentAge >= maxAge || currentHealth <= 0)
+		if(age.isFull() || health.isZero())
 			isDead = true;
 		else {
-			if(currentLibido < maxLibido)
-				currentLibido++;
-			if(currentHealth <  maxHealth)
-				currentHealth++;
-			
-			currentAge++;
+			libido.increment();
+			age.increment();
+			health.increment();
 		}
 	}
 
@@ -124,8 +127,8 @@ public class Particle implements Serializable{
 	//Checks the reproductive criteria: Sufficient libido for both parents, same species, small distance and ensuring they are different particles (different ids).
 	public boolean canReproduce(Particle other) {
 
-		return (currentLibido >= maxLibido) && 
-				(other.currentLibido >= other.maxLibido) && 
+		return (libido.isFull()) && 
+				(other.libido.isFull()) && 
 				(sameSpecies(other)) && 
 				(this.getLocation().distSq(other.getLocation()) <= 5) && 
 				(!this.isSame(other));
@@ -148,10 +151,10 @@ public class Particle implements Serializable{
 		double attractionMult = ((p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double repulsionMult = ((p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double forceMult = ((p1.getForceMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		int libido = (int) Math.round((p1.getMaxLibido() + p2.getMaxLibido() / 2) * (1 - (variance / 2) + Math.random() * variance));
-		int age = (int) Math.round((p1.getMaxAge() + p2.getMaxAge() / 2) * (1 - (variance / 2) + Math.random() * variance));
-		int health = (int) Math.round(((p1.getMaxHealth() + p2.getMaxHealth()) / 2) * (1 - (variance / 2) + Math.random() * variance));
-		int damage =  (int) Math.round(((p1.getDamage() + p2.getDamage()) / 2) * (1 - (variance / 2) + Math.random() * variance));
+		int libido = (int) Math.round((p1.libido.getMax() + p2.libido.getMax()  / 2) * (1 - (variance / 2) + Math.random() * variance));
+		double age = (p1.age.getMax() + p2.age.getMax() / 2) * (1 - (variance / 2) + Math.random() * variance);
+		double health = ((p1.health.getMax() + p2.health.getMax()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+		double damage =  ((p1.getDamage() + p2.getDamage()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		//Make the libido zero.
 //		p1.getLibido().reset();
 //		p2.getLibido().reset();
@@ -164,19 +167,21 @@ public class Particle implements Serializable{
 				forceMult, libido, age, health, damage);
 	}
 	public boolean canAttack(Particle other) {
-		return this.getLocation().distSq(other.getLocation()) <= 2D; 
+		return this.getLocation().distSq(other.getLocation()) <= 5; 
 	}
 	public void attack(Particle other) {
-		other.setCurrentHealth(other.getCurrentAge() - this.damage);	
+		other.health.sub(damage);;	
 	}
-	
-
 
 	public boolean isSame(Particle other) {
 		//If two particles have the same id, they are the same particle.
 		return this.id.equals(other.getId());
 	}
 	//Standard getters and setters for all attributes. Needed by Spark.
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
 
 	public String getId() {
 		return id;
@@ -210,32 +215,20 @@ public class Particle implements Serializable{
 		return forceMultiplier;
 	}
 
-	public int getDamage() {
+	public double getDamage() {
 		return damage;
 	}
 
-	public int getCurrentLibido() {
-		return currentLibido;
+	public ParticleStat getLibido() {
+		return libido;
 	}
 
-	public int getMaxLibido() {
-		return maxLibido;
+	public ParticleStat getAge() {
+		return age;
 	}
 
-	public int getCurrentAge() {
-		return currentAge;
-	}
-
-	public int getMaxAge() {
-		return maxAge;
-	}
-
-	public int getCurrentHealth() {
-		return currentHealth;
-	}
-
-	public int getMaxHealth() {
-		return maxHealth;
+	public ParticleStat getHealth() {
+		return health;
 	}
 
 	public boolean isDead() {
@@ -274,39 +267,23 @@ public class Particle implements Serializable{
 		this.forceMultiplier = forceMultiplier;
 	}
 
-	public void setDamage(int damage) {
+	public void setDamage(double damage) {
 		this.damage = damage;
 	}
 
-	public void setCurrentLibido(int currentLibido) {
-		this.currentLibido = currentLibido;
+	public void setLibido(ParticleStat libido) {
+		this.libido = libido;
 	}
 
-	public void setMaxLibido(int maxLibido) {
-		this.maxLibido = maxLibido;
+	public void setAge(ParticleStat age) {
+		this.age = age;
 	}
 
-	public void setCurrentAge(int currentAge) {
-		this.currentAge = currentAge;
-	}
-
-	public void setMaxAge(int maxAge) {
-		this.maxAge = maxAge;
-	}
-
-	public void setCurrentHealth(int currentHealth) {
-		this.currentHealth = currentHealth;
-	}
-
-	public void setMaxHealth(int maxHealth) {
-		this.maxHealth = maxHealth;
+	public void setHealth(ParticleStat health) {
+		this.health = health;
 	}
 
 	public void setDead(boolean isDead) {
 		this.isDead = isDead;
 	}
-
-
-
-	
 }

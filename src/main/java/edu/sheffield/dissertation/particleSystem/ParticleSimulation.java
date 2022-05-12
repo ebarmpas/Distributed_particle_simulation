@@ -6,10 +6,10 @@ package edu.sheffield.dissertation.particleSystem;
 
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.util.LongAccumulator;
 
 import java.io.File;
 import java.io.IOException;
+
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -24,7 +24,6 @@ public class ParticleSimulation {
 		ParticleDataset pd;
 		//Accumulates all new particles per step in the slave nodes so that they can be collected in the master node and joined to the particle dataset.
 		ParticleAccumulator newParticles = new ParticleAccumulator();
-		LongAccumulator la = new LongAccumulator();
 		//Print the configuration.
 		simConf.print();
 		
@@ -33,7 +32,6 @@ public class ParticleSimulation {
 		
 		//Register the accumulator to spark.
 		spark.sparkContext().register(newParticles, "NewParticles");
-		spark.sparkContext().register(la, "la");
 		
 		//Instantiate the business logic.
 		{
@@ -64,10 +62,10 @@ public class ParticleSimulation {
 						attractionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
 						repulsionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
 						forceMultiplier * (1 - (variance / 2) + r.nextDouble() * variance),
-						(int) Math.round(libido * (1 - (variance / 2) + r.nextDouble() * variance)),
-						(int) Math.round(age * (1 - (variance / 2) + r.nextDouble() * variance)),
-						(int) Math.round(health * (1 - (variance / 2) + r.nextDouble() * variance)),
-						(int) Math.round(attack * (1 - (variance / 2) + r.nextDouble() * variance))));
+						libido * (1 - (variance / 2) + r.nextDouble() * variance),
+						age * (1 - (variance / 2) + r.nextDouble() * variance),
+						health * (1 - (variance / 2) + r.nextDouble() * variance),
+						attack * (1 - (variance / 2) + r.nextDouble() * variance)));
 			}
 			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
 		}
@@ -76,7 +74,7 @@ public class ParticleSimulation {
 		for(int i = 0; i < simConf.getStepNumber(); i++){
 			
 			//Step the simulation.
-			pd.step(newParticles, la);
+			pd.step(newParticles);
 			
 			//After the step is done, collect all the new particles into a dataset so they can be joined.
 			pd.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Particle.class)));
@@ -94,8 +92,7 @@ public class ParticleSimulation {
 			//Reset the accumulator for the next step.
 			newParticles.reset();
 			
-			System.out.println("\n\n" +la.value() + " STEP " + i + " HAS BEEN COMPLETED\n\n");
-			la.reset();
+			System.out.println("\n\n STEP " + i + " HAS BEEN COMPLETED\n\n");
 		}
 
 		spark.stop();

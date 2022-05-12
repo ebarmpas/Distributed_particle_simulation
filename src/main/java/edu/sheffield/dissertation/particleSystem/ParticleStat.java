@@ -22,19 +22,19 @@ public class ParticleStat  implements Serializable{
 		
 	}
 	public void increment() {
-		if(!isMax())
+		if(!isFull())
 			current++;
 	}
 	public void add(int add) {
 		current += add;
 	}
-	public void sub(int sub) {
-		current -= sub;
+	public void sub(double damage) {
+		current -= damage;
 	}
 	public void reset() {
 		current = 0;
 	}
-	public boolean isMax() {
+	public boolean isFull() {
 		return current >= max;
 	}
 	public boolean isZero() {
@@ -60,6 +60,9 @@ public class ParticleStat  implements Serializable{
 		ParticleStat other = (ParticleStat) obj;
 		return Double.doubleToLongBits(current) == Double.doubleToLongBits(other.current)
 				&& Double.doubleToLongBits(max) == Double.doubleToLongBits(other.max);
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 	public double getMax() {
 		return max;
