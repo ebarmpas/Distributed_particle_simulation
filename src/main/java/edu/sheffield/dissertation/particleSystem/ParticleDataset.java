@@ -6,11 +6,13 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+//import java.util.Properties;
 
 import org.apache.spark.api.java.function.FilterFunction;
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
+//import org.apache.spark.sql.SaveMode;
 
 public class ParticleDataset implements Serializable{
 	
@@ -18,10 +20,15 @@ public class ParticleDataset implements Serializable{
 	//Holds all the particles for the simulation.
 	private Dataset<Particle> particles;
 	private SimulationConfiguration simConf;
+//	private Properties jdbcProperties;
 	//Initialize the dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
 	public ParticleDataset(Dataset<Particle> particles, SimulationConfiguration simConf) {
 		this.particles = particles;
 		this.simConf = simConf;
+//		jdbcProperties = new Properties();
+//		jdbcProperties.put("user", "root");
+//		jdbcProperties.put("password", "1234");
+//		jdbcProperties.put("driver", "org.mariadb.jdbc.Driver");
 	}
 
 	//Print the dataset; just used for debugging.
@@ -38,18 +45,16 @@ public class ParticleDataset implements Serializable{
 
 			particle.resetAcc();
 			p.forEach((elem) ->{
-				if(!particle.isSame(elem))	
+				if(particle.getLocation().distSq(elem.getLocation()) <= 400 && !particle.isSame(elem))	
 					if(particle.sameSpecies(elem)) {
 						if(particle.canReproduce(elem))
 							newParticles.add(Particle.reproduce(elem, particle, simConf.getSpeciesVariance(particle.getSpecies())));
 						particle.calculateAttraction(elem);
 					}else {
-						if(particle.canAttack(elem)) {
-							particle.attack(elem);
-						}
+						if(particle.canAttack(elem)) 
+							particle.attack(elem);	
 						particle.calculateRepulsion(elem);
 					}
-					
 			}); 
 
 			return particle;
@@ -84,7 +89,10 @@ public class ParticleDataset implements Serializable{
 
 	//Write the current state of the dataset onto a file.
 	public void output(int step, String outputPath) throws IOException {
+				
 		particles.write().json(outputPath + "/steps/step" + step);
+		//jdbc:mariadb://localhost:3306/DB?user=root&password=myPassword
+//		particles.select("dead").write().mode(SaveMode.Append).jdbc("jdbc:mariadb://localhost:3306/Particle_Simulation?user=root&password=1234", "Particles", jdbcProperties);
 	}
 	
 	public long count() {

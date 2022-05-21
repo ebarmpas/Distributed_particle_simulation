@@ -54,6 +54,7 @@ public class ParticleSimulation {
 				double age = simConf.getSpeciesMaxAge(i);
 				double health = simConf.getSpeciesHealth(i);
 				double attack = simConf.getSpeciesDamage(i);
+				double energy = simConf.getSpeciesMaxEnergy(i);
 				
 				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++) 
 					p.add(new Particle(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
@@ -65,7 +66,8 @@ public class ParticleSimulation {
 						libido * (1 - (variance / 2) + r.nextDouble() * variance),
 						age * (1 - (variance / 2) + r.nextDouble() * variance),
 						health * (1 - (variance / 2) + r.nextDouble() * variance),
-						attack * (1 - (variance / 2) + r.nextDouble() * variance)));
+						attack * (1 - (variance / 2) + r.nextDouble() * variance),
+						energy * (1 - (variance / 2) + r.nextDouble() * variance)));
 			}
 			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
 		}

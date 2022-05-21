@@ -25,20 +25,30 @@ public class ParticleStat  implements Serializable{
 		if(!isFull())
 			current++;
 	}
+	public void decrement() {
+		if(!isZero())
+			current--;
+	}
 	public void add(int add) {
 		current += add;
 	}
 	public void sub(double damage) {
 		current -= damage;
 	}
-	public void reset() {
+	public void empty() {
 		current = 0;
+	}
+	public void fill() {
+		current = max;
 	}
 	public boolean isFull() {
 		return current >= max;
 	}
 	public boolean isZero() {
 		return current <= 0;
+	}
+	public double percentage() {
+		return current / max;
 	}
 	@Override
 	public String toString() {

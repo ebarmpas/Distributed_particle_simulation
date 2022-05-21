@@ -145,6 +145,9 @@ public class SimulationConfiguration implements Serializable{
 	public int getSpeciesDamage(int species) {
 		return (int) simulationSettings.get("SpeciesDamage" + species);
 	}
+	public int getSpeciesMaxEnergy(int species) {
+		return (int) simulationSettings.get("SpeciesMaxEnergy" + species);
+	}
 	public int getSeed() {
 		return (int) simulationSettings.get("Seed");
 	}
@@ -154,6 +157,7 @@ public class SimulationConfiguration implements Serializable{
 	public int getPartitionNumber() {
 		return (int) simulationSettings.get("PartitionNumber");
 	}
+
 	
 	//Pad a String s with spaces until the String is of length len.
 	private String pad(String s, int len) {

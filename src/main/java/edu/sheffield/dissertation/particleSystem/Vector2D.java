@@ -80,10 +80,17 @@ public class Vector2D implements Comparable<Vector2D>, Serializable{
 	public double distSq(Vector2D other) {
 		return Math.pow(this.x - other.getX(), 2) + Math.pow(this.y - other.getY(),2);
 	}
-	public void inverse() {
-		x = 1 / x;
-		y = 1 / y;
+	
+	public double angle(Vector2D v) {
+		
+		return Math.acos(((this.x * v.getX()) + (this.y * v.getY())) / (this.mag() * v.mag())) * 180 / Math.PI;
 	}
+	public void rotate(double angle) {
+		double temp = x;
+		x = Math.cos(angle * x) - Math.sin(angle * y);
+		y = Math.sin(angle * y) + Math.cos(angle * temp);
+	}
+	
 	@Override
 	public int hashCode() {
 		return Objects.hash(x, y);
