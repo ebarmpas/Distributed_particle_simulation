@@ -124,7 +124,7 @@ public class AgentDataset implements Serializable{
 		statFile.createNewFile();
 		statWriter.write("{\"species\":" + species + 
 				", \"count\":" + count +
-				", \"forceMultiplierr\":" + stats.getForceMultiplier() +
+				", \"forceMultiplier\":" + stats.getForceMultiplier() +
 				", \"attractionMultiplier\":" + stats.getAttractionMultiplier() +
 				", \"repulsionMultiplier\":" + stats.getRepulsionMultiplier() +
 				", \"libido\":" + stats.getLibido().getMax() +
