@@ -59,8 +59,6 @@ public class Agent implements Serializable{
 		this.health = new AgentTrait(health, health);
 		this.energy = new AgentTrait(energy, energy);
 		
-
-		
 		this.age.setMax(age);
 		this.age.setCurrent(0);
 		
@@ -90,7 +88,6 @@ public class Agent implements Serializable{
 		}
 
 	}
-
 	public void calculateAttraction(Agent other) {
 		Vector2D distance = Vector2D.sub(other.location, this.location);
 
@@ -151,29 +148,24 @@ public class Agent implements Serializable{
 		loc.div(2);
 
 		//calculate the multipliers.
-		double attractionMult = ((p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double repulsionMult = ((p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double forceMult = ((p1.getForceMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double libido = (p1.libido.getMax() + p2.libido.getMax()  / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double age = (p1.age.getMax() + p2.age.getMax() / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double health = ((p1.health.getMax() + p2.health.getMax()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double damage =  ((p1.getDamage() + p2.getDamage()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double energy = ((p1.getEnergy().getMax() + p2.getEnergy().getMax()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		double visionRange = ((p1.getVisionRange() + p2.getVisionRange()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+		double attractionMult = p1.getAttractionMultiplier();
+		double repulsionMult = p2.getRepulsionMultiplier();
+		double forceMult = p1.getForceMultiplier();
+		double age = p2.getAge().getMax();
+		double health =p1.getHealth().getMax();
+		double damage =  p2.getDamage();
+		double energy = p1.getEnergy().getMax();
+		double visionRange = p2.getVisionRange();
+		double libido = p1.getLibido().getMax();
 
-		//Make the libido zero.
-//		p1.getLibido().reset();
-//		p2.getLibido().reset();
+		p1.getLibido().empty();
+		p2.getLibido().empty();
 		
-		return new Agent(loc,
-				new Vector2D(),
-				new Vector2D(),
-				p1.getSpecies(),
-				attractionMult, repulsionMult,
-				forceMult, libido, age, health, damage, energy, visionRange);
+		return new Agent(loc, new Vector2D(), new Vector2D(), p1.getSpecies(),
+				attractionMult, repulsionMult, forceMult, libido, age, health, damage, energy, visionRange);
 	}
 	public boolean canSee(Agent other) {
-		return this.getLocation().distSq(other.getLocation()) <= 400 && !this.isSame(other);
+		return this.getLocation().distSq(other.getLocation()) <= Math.pow(this.getVisionRange(), 2) && !this.isSame(other);
 	}
 	public boolean canAttack(Agent other) {
 		return this.getLocation().distSq(other.getLocation()) <= 5; 
@@ -319,5 +311,15 @@ public class Agent implements Serializable{
 	public static long getSerialversionuid() {
 		return serialVersionUID;
 	}
+
+	@Override
+	public String toString() {
+		return "Agent [id=" + id + ", location=" + location + ", velocity=" + velocity + ", acceleration="
+				+ acceleration + ", species=" + species + ", attractionMultiplier=" + attractionMultiplier
+				+ ", repulsionMultiplier=" + repulsionMultiplier + ", forceMultiplier=" + forceMultiplier
+				+ ", visionRange=" + visionRange + ", damage=" + damage + ", libido=" + libido + ", age=" + age
+				+ ", health=" + health + ", energy=" + energy + ", dead=" + dead + "]";
+	}
+	
 
 }

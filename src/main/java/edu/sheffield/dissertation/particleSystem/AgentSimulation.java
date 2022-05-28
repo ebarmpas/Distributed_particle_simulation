@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class AgentSimulation {
@@ -35,7 +36,7 @@ public class AgentSimulation {
 		
 		//Instantiate the business logic.
 		{
-			ArrayList<Agent> p;
+			List<Agent> p;
 			int numberOfParticles = 0; 
 			Random r = new Random(simConf.getSeed());
 			
@@ -70,7 +71,7 @@ public class AgentSimulation {
 						energy * (1 - (variance / 2) + r.nextDouble() * variance),
 						visionRange * (1 - (variance / 2) + r.nextDouble() * variance)));
 			}
-			ad = new AgentDataset(spark.createDataset(p, Encoders.bean(Agent.class)), simConf);
+			ad = new AgentDataset(spark.createDataset(p, Encoders.bean(Agent.class)), simConf, newParticles);
 		}
 		
 		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result .
@@ -78,10 +79,10 @@ public class AgentSimulation {
 		for(int i = 0; i < simConf.getSpeciesNumber(); i++)
 			ad.computeStatistics(i, 0, simConf.getOutputDir());
 		
-		for(int i = 1; i < simConf.getStepNumber(); i++){
+		for(int i = 1; i <= simConf.getStepNumber(); i++){
 			
 			//Step the simulation.
-			ad.step(newParticles);
+			ad.step();
 			
 			//After the step is done, collect all the new particles into a dataset so they can be joined.
 			ad.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Agent.class)));
