@@ -3,22 +3,22 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class ParticleStat  implements Serializable{
+public class AgentTrait  implements Serializable{
 
 	private static final long serialVersionUID = 1L;
 	
 	private double max;
 	private double current;
 	
-	public ParticleStat(double max, double current){
+	public AgentTrait(double max, double current){
 		this.max = max;
 		this.current = current;
 	}
-	public ParticleStat(double max) {
+	public AgentTrait(double max) {
 		this.max = max;
 		this.current = 0;
 	}
-	public ParticleStat() {
+	public AgentTrait() {
 		
 	}
 	public void increment() {
@@ -67,7 +67,7 @@ public class ParticleStat  implements Serializable{
 			return false;
 		if (getClass() != obj.getClass())
 			return false;
-		ParticleStat other = (ParticleStat) obj;
+		AgentTrait other = (AgentTrait) obj;
 		return Double.doubleToLongBits(current) == Double.doubleToLongBits(other.current)
 				&& Double.doubleToLongBits(max) == Double.doubleToLongBits(other.max);
 	}

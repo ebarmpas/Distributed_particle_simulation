@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class ParticleSimulation {
+public class AgentSimulation {
 
 	public static void main(String[] args) throws IOException {
 		//simConf holds execution information.
@@ -21,9 +21,9 @@ public class ParticleSimulation {
 		//Main Spark Object.
 		SparkSession spark = SparkSession.builder().appName(simConf.getAppName()).getOrCreate();
 		//Main business logic object.
-		ParticleDataset pd;
+		AgentDataset ad;
 		//Accumulates all new particles per step in the slave nodes so that they can be collected in the master node and joined to the particle dataset.
-		ParticleAccumulator newParticles = new ParticleAccumulator();
+		AgentAccumulator newParticles = new AgentAccumulator();
 		//Print the configuration.
 		simConf.print();
 		
@@ -35,14 +35,14 @@ public class ParticleSimulation {
 		
 		//Instantiate the business logic.
 		{
-			ArrayList<Particle> p;
+			ArrayList<Agent> p;
 			int numberOfParticles = 0; 
 			Random r = new Random(simConf.getSeed());
 			
 			for(int i = 0; i < simConf.getSpeciesNumber(); i++)
 				numberOfParticles += simConf.getSpeciesPopulation(i);
 			
-			p = new ArrayList<Particle>(numberOfParticles);
+			p = new ArrayList<Agent>(numberOfParticles);
 			
 			for(int i = 0; i < simConf.getSpeciesNumber(); i++) {
 				
@@ -55,11 +55,11 @@ public class ParticleSimulation {
 				double health = simConf.getSpeciesHealth(i);
 				double attack = simConf.getSpeciesDamage(i);
 				double energy = simConf.getSpeciesMaxEnergy(i);
+				double visionRange = simConf.getSpeciesVisionRange(i);
 				
 				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++) 
-					p.add(new Particle(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
-						new Vector2D(r.nextDouble(), r.nextDouble()),
-						new Vector2D(r.nextDouble(), r.nextDouble()), i,
+					p.add(new Agent(new Vector2D(r.nextDouble() * 1000, r.nextDouble() * 1000), 
+						new Vector2D(), new Vector2D(), i,
 						attractionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
 						repulsionMultiplier * (1 - (variance / 2) + r.nextDouble() * variance), 
 						forceMultiplier * (1 - (variance / 2) + r.nextDouble() * variance),
@@ -67,33 +67,41 @@ public class ParticleSimulation {
 						age * (1 - (variance / 2) + r.nextDouble() * variance),
 						health * (1 - (variance / 2) + r.nextDouble() * variance),
 						attack * (1 - (variance / 2) + r.nextDouble() * variance),
-						energy * (1 - (variance / 2) + r.nextDouble() * variance)));
+						energy * (1 - (variance / 2) + r.nextDouble() * variance),
+						visionRange * (1 - (variance / 2) + r.nextDouble() * variance)));
 			}
-			pd = new ParticleDataset(spark.createDataset(p, Encoders.bean(Particle.class)), simConf);
+			ad = new AgentDataset(spark.createDataset(p, Encoders.bean(Agent.class)), simConf);
 		}
 		
 		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result .
-		for(int i = 0; i < simConf.getStepNumber(); i++){
+		ad.outputDataset(0, simConf.getOutputDir());
+		for(int i = 0; i < simConf.getSpeciesNumber(); i++)
+			ad.computeStatistics(i, 0, simConf.getOutputDir());
+		
+		for(int i = 1; i < simConf.getStepNumber(); i++){
 			
 			//Step the simulation.
-			pd.step(newParticles);
+			ad.step(newParticles);
 			
 			//After the step is done, collect all the new particles into a dataset so they can be joined.
-			pd.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Particle.class)));
+			ad.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Agent.class)));
 
 			//Check the checkpoint interval and checkpoint if needed.
 			if(i % simConf.getCheckpointInterval() == 0)
-				pd.checkpoint();
+				ad.checkpoint();
 
 			if(i % simConf.getPartitioningInterval() == 0)
-				pd.coalesce(simConf.getPartitionNumber());
+				ad.coalesce(simConf.getPartitionNumber());
 			
 			//Output the particles into a file.
-			pd.output(i, simConf.getOutputDir());
+			ad.outputDataset(i, simConf.getOutputDir());
 			
 			//Reset the accumulator for the next step.
-			newParticles.reset();
 			
+			for(int j = 0; j < simConf.getSpeciesNumber(); j++)
+				ad.computeStatistics(j, i, simConf.getOutputDir());
+			
+			newParticles.reset();
 			System.out.println("\n\n STEP " + i + " HAS BEEN COMPLETED\n\n");
 		}
 

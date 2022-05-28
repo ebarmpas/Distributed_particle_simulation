@@ -6,7 +6,7 @@
 package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
 
-public class Particle implements Serializable{
+public class Agent implements Serializable{
 	
 	private static final long serialVersionUID = 3L;
 	private String id;
@@ -21,21 +21,23 @@ public class Particle implements Serializable{
 	private double repulsionMultiplier;
 	private double forceMultiplier;
 	
+	
+	private double visionRange;
 	private double damage;
 	
-	private ParticleStat libido;
-	private ParticleStat age;
-	private ParticleStat health;
-	private ParticleStat energy;
+	private AgentTrait libido;
+	private AgentTrait age;
+	private AgentTrait health;
+	private AgentTrait energy;
 	
 	private boolean dead;
 		
 	//Empty constructor for Spark, attributes get set using the setters and getter by Spark Automatically.
-	public Particle() {
+	public Agent() {
 	
 	}
 	
-	public Particle( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, double libido, double age, double health, double damage, double energy) {
+	public Agent( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, double libido, double age, double health, double damage, double energy, double visionRange) {
 		//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
 		this.id = Long.valueOf(System.nanoTime()).toString();
 		id += Long.valueOf(System.currentTimeMillis());
@@ -49,12 +51,13 @@ public class Particle implements Serializable{
 		this.repulsionMultiplier = repulsionMultiplier;
 		this.forceMultiplier = forceMultiplier;
 		
+		this.visionRange = visionRange;
 		this.damage = damage;
 		
-		this.libido = new ParticleStat(libido);
-		this.age = new ParticleStat(age);
-		this.health = new ParticleStat(health, health);
-		this.energy = new ParticleStat(energy, energy);
+		this.libido = new AgentTrait(libido);
+		this.age = new AgentTrait(age);
+		this.health = new AgentTrait(health, health);
+		this.energy = new AgentTrait(energy, energy);
 		
 
 		
@@ -88,7 +91,7 @@ public class Particle implements Serializable{
 
 	}
 
-	public void calculateAttraction(Particle other) {
+	public void calculateAttraction(Agent other) {
 		Vector2D distance = Vector2D.sub(other.location, this.location);
 
 		if(Math.abs(distance.getX()) > 500)
@@ -102,7 +105,7 @@ public class Particle implements Serializable{
 		applyForce(distance);
 		
 	}
-	public void calculateRepulsion(Particle other) {
+	public void calculateRepulsion(Agent other) {
 		Vector2D distance = Vector2D.sub(this.location, other.location);
 		
 		if(Math.abs(distance.getX()) > 500)
@@ -111,7 +114,7 @@ public class Particle implements Serializable{
 		if(Math.abs(distance.getY()) > 500)
 			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-		distance.mult(this.repulsionMultiplier * calculateStatMultipler(energy) * calculateStatMultipler(health));
+		distance.mult(this.repulsionMultiplier * calculateTraitMultipler(energy) * calculateTraitMultipler(health));
 		
 		applyForce(distance);
 	}
@@ -125,7 +128,7 @@ public class Particle implements Serializable{
 		acceleration.setY(0);
 	}
 	//Checks the reproductive criteria: Sufficient libido for both parents, same species, small distance and ensuring they are different particles (different ids).
-	public boolean canReproduce(Particle other) {
+	public boolean canReproduce(Agent other) {
 
 		return (libido.isFull()) && 
 				(other.libido.isFull()) && 
@@ -135,13 +138,13 @@ public class Particle implements Serializable{
 	}
 	
 	//Check if the two particles are the same species.
-	public boolean sameSpecies(Particle p) {
+	public boolean sameSpecies(Agent p) {
 		return p.getSpecies() == this.species;
 	}
 
 	//The reproduction algorithm. The location and multipliers are averaged. The species remains the same as the parents.
 	//The velocity and acceleration are zero. New unique id is generated too.
-	public static Particle reproduce(Particle p1, Particle p2, double variance) {
+	public static Agent reproduce(Agent p1, Agent p2, double variance) {
 		
 		//Calculate the location.
 		Vector2D loc = Vector2D.add(p1.getLocation(), p2.getLocation());
@@ -151,31 +154,35 @@ public class Particle implements Serializable{
 		double attractionMult = ((p1.getAttractionMultiplier() + p2.getAttractionMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double repulsionMult = ((p1.getRepulsionMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double forceMult = ((p1.getForceMultiplier() + p2.getForceMultiplier()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		int libido = (int) Math.round((p1.libido.getMax() + p2.libido.getMax()  / 2) * (1 - (variance / 2) + Math.random() * variance));
+		double libido = (p1.libido.getMax() + p2.libido.getMax()  / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double age = (p1.age.getMax() + p2.age.getMax() / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double health = ((p1.health.getMax() + p2.health.getMax()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double damage =  ((p1.getDamage() + p2.getDamage()) / 2) * (1 - (variance / 2) + Math.random() * variance);
 		double energy = ((p1.getEnergy().getMax() + p2.getEnergy().getMax()) / 2) * (1 - (variance / 2) + Math.random() * variance);
-		
+		double visionRange = ((p1.getVisionRange() + p2.getVisionRange()) / 2) * (1 - (variance / 2) + Math.random() * variance);
+
 		//Make the libido zero.
 //		p1.getLibido().reset();
 //		p2.getLibido().reset();
 		
-		return new Particle(loc,
+		return new Agent(loc,
 				new Vector2D(),
 				new Vector2D(),
 				p1.getSpecies(),
 				attractionMult, repulsionMult,
-				forceMult, libido, age, health, damage, energy);
+				forceMult, libido, age, health, damage, energy, visionRange);
 	}
-	public boolean canAttack(Particle other) {
+	public boolean canSee(Agent other) {
+		return this.getLocation().distSq(other.getLocation()) <= 400 && !this.isSame(other);
+	}
+	public boolean canAttack(Agent other) {
 		return this.getLocation().distSq(other.getLocation()) <= 5; 
 	}
-	public void attack(Particle other) {
+	public void attack(Agent other) {
 		other.getHealth().sub(damage);
 		this.getEnergy().fill();
 	}
-	public double calculateStatMultipler(ParticleStat stat) {
+	public double calculateTraitMultipler(AgentTrait stat) {
 		double percentage = stat.percentage();
 	
 		if(percentage < 0.5)
@@ -183,7 +190,7 @@ public class Particle implements Serializable{
 		
 		return percentage * 10;	
 	}
-	public boolean isSame(Particle other) {
+	public boolean isSame(Agent other) {
 		//If two particles have the same id, they are the same particle.
 		return this.id.equals(other.getId());
 	}
@@ -253,6 +260,14 @@ public class Particle implements Serializable{
 		this.forceMultiplier = forceMultiplier;
 	}
 
+	public double getVisionRange() {
+		return visionRange;
+	}
+
+	public void setVisionRange(double visionRange) {
+		this.visionRange = visionRange;
+	}
+
 	public double getDamage() {
 		return damage;
 	}
@@ -261,35 +276,35 @@ public class Particle implements Serializable{
 		this.damage = damage;
 	}
 
-	public ParticleStat getLibido() {
+	public AgentTrait getLibido() {
 		return libido;
 	}
 
-	public void setLibido(ParticleStat libido) {
+	public void setLibido(AgentTrait libido) {
 		this.libido = libido;
 	}
 
-	public ParticleStat getAge() {
+	public AgentTrait getAge() {
 		return age;
 	}
 
-	public void setAge(ParticleStat age) {
+	public void setAge(AgentTrait age) {
 		this.age = age;
 	}
 
-	public ParticleStat getHealth() {
+	public AgentTrait getHealth() {
 		return health;
 	}
 
-	public void setHealth(ParticleStat health) {
+	public void setHealth(AgentTrait health) {
 		this.health = health;
 	}
 
-	public ParticleStat getEnergy() {
+	public AgentTrait getEnergy() {
 		return energy;
 	}
 
-	public void setEnergy(ParticleStat energy) {
+	public void setEnergy(AgentTrait energy) {
 		this.energy = energy;
 	}
 

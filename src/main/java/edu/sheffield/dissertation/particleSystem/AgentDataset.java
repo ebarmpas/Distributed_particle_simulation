@@ -14,16 +14,16 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 //import org.apache.spark.sql.SaveMode;
 
-public class ParticleDataset implements Serializable{
+public class AgentDataset implements Serializable{
 	
 	private static final long serialVersionUID = 1L;
 	//Holds all the particles for the simulation.
-	private Dataset<Particle> particles;
+	private Dataset<Agent> agents;
 	private SimulationConfiguration simConf;
 //	private Properties jdbcProperties;
 	//Initialize the dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
-	public ParticleDataset(Dataset<Particle> particles, SimulationConfiguration simConf) {
-		this.particles = particles;
+	public AgentDataset(Dataset<Agent> particles, SimulationConfiguration simConf) {
+		this.agents = particles;
 		this.simConf = simConf;
 //		jdbcProperties = new Properties();
 //		jdbcProperties.put("user", "root");
@@ -33,69 +33,77 @@ public class ParticleDataset implements Serializable{
 
 	//Print the dataset; just used for debugging.
 	public void show() {
-		particles.show();
+		agents.show();
 	}
 	//Calculates the reproduction and movement of the particles by updating their position, velocity and acceleration.
 	//Currently there are two forces at play: attraction, which happens between particles of the same species and repulsion, which happens between particles of different species.
 	//Reproduction is done by comparing each particle with every other particle.
-	public void step(ParticleAccumulator newParticles) {
-		List<Particle> p = particles.collectAsList();
+	public void step(AgentAccumulator newAgents) {
+		List<Agent> p = agents.collectAsList();
 		//Iterates through all the particles and transforms them.
-		particles = particles.map((MapFunction<Particle, Particle>) (particle)->{
+		agents = agents.map((MapFunction<Agent, Agent>) (agent)->{
 
-			particle.resetAcc();
+			agent.resetAcc();
 			p.forEach((elem) ->{
-				if(particle.getLocation().distSq(elem.getLocation()) <= 400 && !particle.isSame(elem))	
-					if(particle.sameSpecies(elem)) {
-						if(particle.canReproduce(elem))
-							newParticles.add(Particle.reproduce(elem, particle, simConf.getSpeciesVariance(particle.getSpecies())));
-						particle.calculateAttraction(elem);
+				if(agent.canSee(elem))
+					if(agent.sameSpecies(elem)) {
+						if(agent.canReproduce(elem))
+							newAgents.add(Agent.reproduce(elem, agent, simConf.getSpeciesVariance(agent.getSpecies())));
+						agent.calculateAttraction(elem);
 					}else {
-						if(particle.canAttack(elem)) 
-							particle.attack(elem);	
-						particle.calculateRepulsion(elem);
+						if(agent.canAttack(elem)) 
+							agent.attack(elem);	
+						agent.calculateRepulsion(elem);
 					}
 			}); 
 
-			return particle;
+			return agent;
 
-		}, Encoders.bean(Particle.class));
+		}, Encoders.bean(Agent.class));
 
 		//Only return particles who are alive.
-		particles = particles.filter((FilterFunction<Particle>) (particle) -> !particle.isDead());
+		agents = agents.filter((FilterFunction<Agent>) (agent) -> !agent.isDead());
 
 		//Apply all the changes that were calculated previously. This is done separately to make sure everything is done uniformly.
-		particles = particles.map((MapFunction<Particle, Particle>) (particle) -> {
-			particle.step(simConf.getForceMultiplier());
-			return particle;
-		}, Encoders.bean(Particle.class));
+		agents = agents.map((MapFunction<Agent, Agent>) (agent) -> {
+			agent.step(simConf.getForceMultiplier());
+			return agent;
+		}, Encoders.bean(Agent.class));
 
 	}
 
-	public void addNewParticles(Dataset<Particle> np) {
-		particles = particles.union(np);
+	public void addNewParticles(Dataset<Agent> np) {
+		agents = agents.union(np);
 		np.unpersist();
+	}
+	
+	public void computeStatistics(int species, int step, String outputPath) {
+		//{"summary":"mean","attractionMultiplier":"0.999749774457852","damage":"80.07986395730077","forceMultiplier":"1.003525433206758","id":"5.569975630427063E33","repulsionMultiplier":"1.004194110166721","species":"0.0","visionRange":"5.008222942758357"}
+		agents.filter((FilterFunction<Agent>) (agent) -> agent.getSpecies() == species).select(
+		"attractionMultiplier", "damage", "forceMultiplier", "repulsionMultiplier", "visionRange")
+		.summary("mean", "count").write().json(outputPath + "/stats/step" + step + "/species/" + species);
+		
 	}
 	
 	//Checkpoint the dataset. This has two purposes, out of which we are interested in the latter : local backup, and truncating the logical plan (ie force the lazy evaluations to happen).
 	//This is very important to save RAM and improve performance. Without it, the program crashes due to a stack overflow error.
 
 	public void checkpoint() {
-		particles = particles.localCheckpoint(true);
+		agents = agents.localCheckpoint(true);
 	}
 	public void coalesce(int partitionNumber) {
-		particles = particles.coalesce(partitionNumber);
+		agents = agents.coalesce(partitionNumber);
 	}
 
 	//Write the current state of the dataset onto a file.
-	public void output(int step, String outputPath) throws IOException {
-				
-		particles.write().json(outputPath + "/steps/step" + step);
+	public void outputDataset(int step, String outputPath) throws IOException {
+		agents.select("location", "species").write().json(outputPath + "/steps/step" + step);
+//		particles.write().json(outputPath + "/steps/step" + step);
 		//jdbc:mariadb://localhost:3306/DB?user=root&password=myPassword
 //		particles.select("dead").write().mode(SaveMode.Append).jdbc("jdbc:mariadb://localhost:3306/Particle_Simulation?user=root&password=1234", "Particles", jdbcProperties);
 	}
 	
 	public long count() {
-		return particles.count();
+		return agents.count();
 	}
 }

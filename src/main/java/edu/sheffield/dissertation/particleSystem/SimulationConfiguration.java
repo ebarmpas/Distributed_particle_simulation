@@ -157,6 +157,9 @@ public class SimulationConfiguration implements Serializable{
 	public int getPartitionNumber() {
 		return (int) simulationSettings.get("PartitionNumber");
 	}
+	public int getSpeciesVisionRange(int species) {
+		return (int) simulationSettings.get("SpeciesVisionRange" + species);
+	}
 
 	
 	//Pad a String s with spaces until the String is of length len.

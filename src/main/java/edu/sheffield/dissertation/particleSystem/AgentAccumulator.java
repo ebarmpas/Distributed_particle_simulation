@@ -9,14 +9,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.spark.util.AccumulatorV2;
 
 
-public class ParticleAccumulator extends AccumulatorV2<Particle, List<Particle>> {
+public class AgentAccumulator extends AccumulatorV2<Agent, List<Agent>> {
 
 	private static final long serialVersionUID = 1L;
 	
-	private List<Particle> outputList;
+	private List<Agent> outputList;
 
-    public ParticleAccumulator(){
-        this.outputList = new CopyOnWriteArrayList<Particle>();
+    public AgentAccumulator(){
+        this.outputList = new CopyOnWriteArrayList<Agent>();
     }
 
     @Override
@@ -25,29 +25,29 @@ public class ParticleAccumulator extends AccumulatorV2<Particle, List<Particle>>
     }
 
     @Override
-    public AccumulatorV2<Particle, List<Particle>> copy() {
-        ParticleAccumulator customAccumulatorCopy = new ParticleAccumulator();
+    public AccumulatorV2<Agent, List<Agent>> copy() {
+        AgentAccumulator customAccumulatorCopy = new AgentAccumulator();
         customAccumulatorCopy.merge(this);
         return customAccumulatorCopy;
     }
 
     @Override
     public void reset() {
-        this.outputList = new CopyOnWriteArrayList<Particle>();
+        this.outputList = new CopyOnWriteArrayList<Agent>();
     }
 
     @Override
-    public void add(Particle v) {
+    public void add(Agent v) {
     	outputList.add(v);
     }
 
     @Override
-    public void merge(AccumulatorV2<Particle, List<Particle>> other) {
+    public void merge(AccumulatorV2<Agent, List<Agent>> other) {
     	outputList.addAll(other.value());
     }
 
     @Override
-    public List<Particle> value() {
+    public List<Agent> value() {
         return this.outputList;
     }
 }
