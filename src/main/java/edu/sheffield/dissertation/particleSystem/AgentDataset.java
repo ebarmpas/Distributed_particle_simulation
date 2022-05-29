@@ -50,7 +50,7 @@ public class AgentDataset implements Serializable{
 				if(agent.canSee(elem))
 					if(agent.sameSpecies(elem)) {
 						if(agent.canReproduce(elem))
-							newAgents.add(Agent.reproduce(elem, agent, simConf.getSpeciesVariance(agent.getSpecies())));
+							newAgents.add(Agent.reproduce(elem, agent));
 						agent.calculateAttraction(elem);
 					}else {
 						if(agent.canAttack(elem)) 
@@ -81,37 +81,42 @@ public class AgentDataset implements Serializable{
 	
 	public void computeStatistics(int species, int step, String outputDir) throws IOException {
 		//{"summary":"mean","attractionMultiplier":"0.999749774457852","damage":"80.07986395730077","forceMultiplier":"1.003525433206758","id":"5.569975630427063E33","repulsionMultiplier":"1.004194110166721","species":"0.0","visionRange":"5.008222942758357"}
-		Dataset<Agent> temp = agents.filter((FilterFunction<Agent>) (agent) -> agent.getSpecies() == species);
-		Agent stats = temp.reduce((ReduceFunction<Agent>) (total, agent) -> {
-			Agent a = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0,0);
-			a.setForceMultiplier(total.getForceMultiplier() + agent.getForceMultiplier());
-			a.setAttractionMultiplier(total.getAttractionMultiplier() + agent.getAttractionMultiplier());
-			a.setRepulsionMultiplier(total.getRepulsionMultiplier() + agent.getRepulsionMultiplier());
-			
-			a.getLibido().setMax(total.getLibido().getMax() + agent.getLibido().getMax());
-			a.getAge().setMax(total.getAge().getMax() + agent.getAge().getMax());
-			a.getEnergy().setMax(total.getEnergy().getMax() + agent.getEnergy().getMax());
-			a.getHealth().setMax(total.getHealth().getMax() + agent.getHealth().getMax());
-
-			a.setDamage(total.getDamage() + agent.getDamage());
-			a.setVisionRange(total.getVisionRange() + agent.getVisionRange());
-
-			return a;
-		});
-		long count = temp.count();
 		
-		stats.setForceMultiplier(stats.getForceMultiplier() / count);
-		stats.setAttractionMultiplier(stats.getAttractionMultiplier() / count);
-		stats.setRepulsionMultiplier(stats.getRepulsionMultiplier() / count);
-
-		stats.getLibido().setMax(stats.getLibido().getMax() / count);
-		stats.getAge().setMax(stats.getAge().getMax() / count);
-		stats.getEnergy().setMax(stats.getEnergy().getMax() / count);
-		stats.getHealth().setMax(stats.getHealth().getMax() / count);
-
-		stats.setDamage(stats.getDamage() / count);
-		stats.setVisionRange(stats.getVisionRange() / count);
+		Dataset<Agent> temp = agents.filter((FilterFunction<Agent>) (agent) -> agent.getSpecies() == species);
+		long count = temp.count();
+		Agent stats;
+		if(count > 0) {
+			stats = temp.reduce((ReduceFunction<Agent>) (total, agent) -> {
+				Agent a = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0,0);
+				a.setForceMultiplier(total.getForceMultiplier() + agent.getForceMultiplier());
+				a.setAttractionMultiplier(total.getAttractionMultiplier() + agent.getAttractionMultiplier());
+				a.setRepulsionMultiplier(total.getRepulsionMultiplier() + agent.getRepulsionMultiplier());
+				
+				a.getLibido().setMax(total.getLibido().getMax() + agent.getLibido().getMax());
+				a.getAge().setMax(total.getAge().getMax() + agent.getAge().getMax());
+				a.getEnergy().setMax(total.getEnergy().getMax() + agent.getEnergy().getMax());
+				a.getHealth().setMax(total.getHealth().getMax() + agent.getHealth().getMax());
+	
+				a.setDamage(total.getDamage() + agent.getDamage());
+				a.setVisionRange(total.getVisionRange() + agent.getVisionRange());
+	
+				return a;
+			});
 			
+			
+			stats.setForceMultiplier(stats.getForceMultiplier() / count);
+			stats.setAttractionMultiplier(stats.getAttractionMultiplier() / count);
+			stats.setRepulsionMultiplier(stats.getRepulsionMultiplier() / count);
+	
+			stats.getLibido().setMax(stats.getLibido().getMax() / count);
+			stats.getAge().setMax(stats.getAge().getMax() / count);
+			stats.getEnergy().setMax(stats.getEnergy().getMax() / count);
+			stats.getHealth().setMax(stats.getHealth().getMax() / count);
+	
+			stats.setDamage(stats.getDamage() / count);
+			stats.setVisionRange(stats.getVisionRange() / count);
+		}else
+			stats = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0,0);
 		File statFile = new File(outputDir + "/stats/stats" + step + "/" + "stats" + species + ".json");
 		if(!statFile.getParentFile().getParentFile().exists())
 			statFile.getParentFile().getParentFile().mkdir();

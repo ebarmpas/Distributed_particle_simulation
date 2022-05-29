@@ -1,5 +1,5 @@
 /*
- * Particles are the building blocks of the simulation. 
+ * Agents are the building blocks of the simulation. 
  * They are a collection of vectors, whose job it is to keep track of location, velocity, acceleration,
  * as well a species and a bunch of parameters that affect the behavior of the particle,  plus a unique identifier.
  */
@@ -141,27 +141,27 @@ public class Agent implements Serializable{
 
 	//The reproduction algorithm. The location and multipliers are averaged. The species remains the same as the parents.
 	//The velocity and acceleration are zero. New unique id is generated too.
-	public static Agent reproduce(Agent p1, Agent p2, double variance) {
+	public static Agent reproduce(Agent a1, Agent a2) {
 		
 		//Calculate the location.
-		Vector2D loc = Vector2D.add(p1.getLocation(), p2.getLocation());
+		Vector2D loc = Vector2D.add(a1.getLocation(), a2.getLocation());
 		loc.div(2);
 
 		//calculate the multipliers.
-		double attractionMult = p1.getAttractionMultiplier();
-		double repulsionMult = p2.getRepulsionMultiplier();
-		double forceMult = p1.getForceMultiplier();
-		double age = p2.getAge().getMax();
-		double health =p1.getHealth().getMax();
-		double damage =  p2.getDamage();
-		double energy = p1.getEnergy().getMax();
-		double visionRange = p2.getVisionRange();
-		double libido = p1.getLibido().getMax();
+		double attractionMult = a1.getAttractionMultiplier();
+		double repulsionMult = a2.getRepulsionMultiplier();
+		double forceMult = a1.getForceMultiplier();
+		double age = a2.getAge().getMax();
+		double health =a1.getHealth().getMax();
+		double damage =  a2.getDamage();
+		double energy = a1.getEnergy().getMax();
+		double visionRange = a2.getVisionRange();
+		double libido = a1.getLibido().getMax();
 
-		p1.getLibido().empty();
-		p2.getLibido().empty();
+		a1.getLibido().empty();
+		a2.getLibido().empty();
 		
-		return new Agent(loc, new Vector2D(), new Vector2D(), p1.getSpecies(),
+		return new Agent(loc, new Vector2D(), new Vector2D(), a1.getSpecies(),
 				attractionMult, repulsionMult, forceMult, libido, age, health, damage, energy, visionRange);
 	}
 	public boolean canSee(Agent other) {
