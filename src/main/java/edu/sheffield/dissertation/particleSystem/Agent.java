@@ -111,7 +111,7 @@ public class Agent implements Serializable{
 		if(Math.abs(distance.getY()) > 500)
 			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-		distance.mult(this.repulsionMultiplier * calculateTraitMultipler(energy) * calculateTraitMultipler(health));
+		distance.mult(this.repulsionMultiplier * calculateTraitMultipler(energy));
 		
 		applyForce(distance);
 	}
@@ -168,7 +168,7 @@ public class Agent implements Serializable{
 		return this.getLocation().distSq(other.getLocation()) <= Math.pow(this.getVisionRange(), 2) && !this.isSame(other);
 	}
 	public boolean canAttack(Agent other) {
-		return this.getLocation().distSq(other.getLocation()) <= 5; 
+		return this.getLocation().distSq(other.getLocation()) <= 5;
 	}
 	public void attack(Agent other) {
 		other.getHealth().sub(damage);
@@ -180,7 +180,7 @@ public class Agent implements Serializable{
 		if(percentage < 0.5)
 			percentage = (1 - percentage) * -1;
 		
-		return percentage * 10;	
+		return percentage;	
 	}
 	public boolean isSame(Agent other) {
 		//If two particles have the same id, they are the same particle.
