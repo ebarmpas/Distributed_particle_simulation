@@ -2,7 +2,6 @@ package edu.sheffield.dissertation.particleSystem;
 import java.io.Serializable;
 import java.util.Objects;
 
-
 public class Vector2D implements Comparable<Vector2D>, Serializable{
 
 	private static final long serialVersionUID = 1L;

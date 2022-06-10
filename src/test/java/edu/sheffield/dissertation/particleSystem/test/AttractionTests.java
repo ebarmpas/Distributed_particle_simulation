@@ -10,8 +10,8 @@ public class AttractionTests {
 
 	@Test
 	public void testAttractionNoWrapAround() {
-		Agent a1 = new Agent(new Vector2D(500, 500), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100, 100);
-		Agent a2 = new Agent(new Vector2D(600, 600), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100, 10);
+		Agent a1 = new Agent(new Vector2D(500, 500), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100);
+		Agent a2 = new Agent(new Vector2D(600, 600), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 10);
 		
 		a1.calculateAttraction(a2);
 		a1.step(1);
@@ -22,8 +22,8 @@ public class AttractionTests {
 	
 	@Test
 	public void testAttractionWrapAround() {
-		Agent a1 = new Agent(new Vector2D(950, 950), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100, 100);
-		Agent a2 = new Agent(new Vector2D(40, 40), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100, 100);
+		Agent a1 = new Agent(new Vector2D(950, 950), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100);
+		Agent a2 = new Agent(new Vector2D(40, 40), new Vector2D(), new Vector2D(), 0, 1, 1, 1, 100, 100, 100, 100, 100);
 		
 		a1.calculateAttraction(a2);
 		a1.step(1);	

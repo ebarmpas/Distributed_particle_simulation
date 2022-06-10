@@ -1,5 +1,5 @@
 /*
- * Main driver class for the Particle Simulation.
+ * Main driver class for the Agent Simulation.
  * Its job is to simply setup the Spark environment and call methods.
  */
 package edu.sheffield.dissertation.particleSystem;
@@ -23,7 +23,7 @@ public class AgentSimulation {
 		SparkSession spark = SparkSession.builder().appName(simConf.getAppName()).getOrCreate();
 		//Main business logic object.
 		AgentDataset ad;
-		//Accumulates all new particles per step in the slave nodes so that they can be collected in the master node and joined to the particle dataset.
+		//Accumulates all new agents per step in the slave nodes so that they can be collected in the master node and joined to the particle Dataset.
 		AgentAccumulator newParticles = new AgentAccumulator();
 		//Print the configuration.
 		simConf.print();
@@ -55,7 +55,6 @@ public class AgentSimulation {
 				double age = simConf.getSpeciesMaxAge(i);
 				double health = simConf.getSpeciesHealth(i);
 				double attack = simConf.getSpeciesDamage(i);
-				double energy = simConf.getSpeciesMaxEnergy(i);
 				double visionRange = simConf.getSpeciesVisionRange(i);
 				
 				for(int j = 0; j < simConf.getSpeciesPopulation(i); j++) 
@@ -68,13 +67,12 @@ public class AgentSimulation {
 						age * (1 - (variance / 2) + r.nextDouble() * variance),
 						health * (1 - (variance / 2) + r.nextDouble() * variance),
 						attack * (1 - (variance / 2) + r.nextDouble() * variance),
-						energy * (1 - (variance / 2) + r.nextDouble() * variance),
 						visionRange * (1 - (variance / 2) + r.nextDouble() * variance)));
 			}
 			ad = new AgentDataset(spark.createDataset(p, Encoders.bean(Agent.class)), simConf, newParticles);
 		}
 		
-		//Main event loop. On each step, calculate the new position and velocity of the particles, checkpoint them if needed, and then output the result .
+		//Main event loop. On each step, calculate, checkpoint if needed, and then output the result .
 		ad.outputDataset(0, simConf.getOutputDir());
 		for(int i = 0; i < simConf.getSpeciesNumber(); i++)
 			ad.computeStatistics(i, 0, simConf.getOutputDir());
@@ -84,7 +82,7 @@ public class AgentSimulation {
 			//Step the simulation.
 			ad.step();
 			
-			//After the step is done, collect all the new particles into a dataset so they can be joined.
+			//After the step is done, collect all the new agents into a Dataset so they can be joined.
 			ad.addNewParticles(spark.createDataset(newParticles.value(), Encoders.bean(Agent.class)));
 
 			//Check the checkpoint interval and checkpoint if needed.
@@ -97,11 +95,10 @@ public class AgentSimulation {
 			//Output the particles into a file.
 			ad.outputDataset(i, simConf.getOutputDir());
 			
-			//Reset the accumulator for the next step.
-			
+			//Calculate stats
 			for(int j = 0; j < simConf.getSpeciesNumber(); j++)
 				ad.computeStatistics(j, i, simConf.getOutputDir());
-			
+			//Reset the accumulator for the next step.
 			newParticles.reset();
 			System.out.println("\n\n STEP " + i + " HAS BEEN COMPLETED\n\n");
 		}

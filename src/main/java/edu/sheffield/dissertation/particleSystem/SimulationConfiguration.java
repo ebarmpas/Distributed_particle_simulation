@@ -1,13 +1,5 @@
 /*
  * Holds information about the simulation. Currently holds:
- *  The name of the app
- *  The number of steps to be executed
- *  The directory in which the Particle dataset gets checkpointed
- *  The input directory
- *  The output directory
- *  The general force multiplier
- *  The width of the plane
- *  The height of the plane
  */
 package edu.sheffield.dissertation.particleSystem;
 import java.io.File;

@@ -1,5 +1,5 @@
 /*
- * holds particles in a list added from the worker nodes so that they can be collected as a list and added to the main particle dataset.
+ * holds agents in a list added from the worker nodes so that they can be collected as a list and added to the main agent Dataset.
  */
 
 package edu.sheffield.dissertation.particleSystem;

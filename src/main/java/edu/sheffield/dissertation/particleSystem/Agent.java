@@ -28,7 +28,6 @@ public class Agent implements Serializable{
 	private AgentTrait libido;
 	private AgentTrait age;
 	private AgentTrait health;
-	private AgentTrait energy;
 	
 	private boolean dead;
 		
@@ -37,7 +36,7 @@ public class Agent implements Serializable{
 	
 	}
 	
-	public Agent( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, double libido, double age, double health, double damage, double energy, double visionRange) {
+	public Agent( Vector2D location, Vector2D velocity, Vector2D acceleration, int species, double attractionMultiplier, double repulsionMultiplier, double forceMultiplier, double libido, double age, double health, double damage, double visionRange) {
 		//Generate a unique ID for this particle. IDs are based on the current Unix timestamp since epoch time, the current VM's uptime and a random number.
 		this.id = Long.valueOf(System.nanoTime()).toString();
 		id += Long.valueOf(System.currentTimeMillis());
@@ -57,7 +56,6 @@ public class Agent implements Serializable{
 		this.libido = new AgentTrait(libido);
 		this.age = new AgentTrait(age);
 		this.health = new AgentTrait(health, health);
-		this.energy = new AgentTrait(energy, energy);
 		
 		this.age.setMax(age);
 		this.age.setCurrent(0);
@@ -78,13 +76,12 @@ public class Agent implements Serializable{
 		location.add(velocity);
 		location.mod(1000, 1000);
 		
-		if(age.isFull() || health.isZero() || energy.isZero())
+		if(age.isFull() || health.isZero())
 			dead = true;
 		else {
 			libido.increment();
 			age.increment();
 			health.increment();
-			energy.decrement();
 		}
 
 	}
@@ -111,7 +108,7 @@ public class Agent implements Serializable{
 		if(Math.abs(distance.getY()) > 500)
 			distance.setY(distance.getY() - (1000 * Math.signum(distance.getY())));
 	
-		distance.mult(this.repulsionMultiplier * calculateTraitMultipler(energy));
+		distance.mult(this.repulsionMultiplier);
 		
 		applyForce(distance);
 	}
@@ -154,7 +151,6 @@ public class Agent implements Serializable{
 		double age = a2.getAge().getMax();
 		double health =a1.getHealth().getMax();
 		double damage =  a2.getDamage();
-		double energy = a1.getEnergy().getMax();
 		double visionRange = a2.getVisionRange();
 		double libido = a1.getLibido().getMax();
 
@@ -162,7 +158,7 @@ public class Agent implements Serializable{
 		a2.getLibido().empty();
 		
 		return new Agent(loc, new Vector2D(), new Vector2D(), a1.getSpecies(),
-				attractionMult, repulsionMult, forceMult, libido, age, health, damage, energy, visionRange);
+				attractionMult, repulsionMult, forceMult, libido, age, health, damage, visionRange);
 	}
 	public boolean canSee(Agent other) {
 		return this.getLocation().distSq(other.getLocation()) <= Math.pow(this.getVisionRange(), 2) && !this.isSame(other);
@@ -172,13 +168,12 @@ public class Agent implements Serializable{
 	}
 	public void attack(Agent other) {
 		other.getHealth().sub(damage);
-		this.getEnergy().fill();
 	}
 	public double calculateTraitMultipler(AgentTrait stat) {
 		double percentage = stat.percentage();
-	
-		if(percentage < 0.5)
-			percentage = (1 - percentage) * -1;
+			
+		if(percentage < 0.2)
+			percentage = (0.2 - percentage) * -1;
 		
 		return percentage;	
 	}
@@ -292,14 +287,6 @@ public class Agent implements Serializable{
 		this.health = health;
 	}
 
-	public AgentTrait getEnergy() {
-		return energy;
-	}
-
-	public void setEnergy(AgentTrait energy) {
-		this.energy = energy;
-	}
-
 	public boolean isDead() {
 		return dead;
 	}
@@ -318,7 +305,7 @@ public class Agent implements Serializable{
 				+ acceleration + ", species=" + species + ", attractionMultiplier=" + attractionMultiplier
 				+ ", repulsionMultiplier=" + repulsionMultiplier + ", forceMultiplier=" + forceMultiplier
 				+ ", visionRange=" + visionRange + ", damage=" + damage + ", libido=" + libido + ", age=" + age
-				+ ", health=" + health + ", energy=" + energy + ", dead=" + dead + "]";
+				+ ", health=" + health + ", dead=" + dead + "]";
 	}
 	
 

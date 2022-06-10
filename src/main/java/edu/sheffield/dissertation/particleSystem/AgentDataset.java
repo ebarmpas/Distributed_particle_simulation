@@ -25,7 +25,7 @@ public class AgentDataset implements Serializable{
 	private SimulationConfiguration simConf;
 	private AgentAccumulator newAgents;
 
-	//Initialize the dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
+	//Initialize the Dataset from file. Takes the String Dataset that is passed and parses the Strings into numbers.
 	public AgentDataset(Dataset<Agent> particles, SimulationConfiguration simConf, AgentAccumulator newAgents) {
 		this.agents = particles;
 		this.simConf = simConf;
@@ -33,13 +33,11 @@ public class AgentDataset implements Serializable{
 
 	}
 
-	//Print the dataset; just used for debugging.
+	//Print the Dataset; just used for debugging.
 	public void show() {
 		agents.show();
 	}
-	//Calculates the reproduction and movement of the particles by updating their position, velocity and acceleration.
-	//Currently there are two forces at play: attraction, which happens between particles of the same species and repulsion, which happens between particles of different species.
-	//Reproduction is done by comparing each particle with every other particle.
+	//Where all the calculations are done
 	public void step() {
 		List<Agent> p = agents.collectAsList();
 		//Iterates through all the particles and transforms them.
@@ -63,7 +61,7 @@ public class AgentDataset implements Serializable{
 
 		}, Encoders.bean(Agent.class));
 
-		//Only return particles who are alive.
+		//Only return agents who are alive.
 		agents = agents.filter((FilterFunction<Agent>) (agent) -> !agent.isDead());
 
 		//Apply all the changes that were calculated previously. This is done separately to make sure everything is done uniformly.
@@ -80,21 +78,19 @@ public class AgentDataset implements Serializable{
 	}
 	
 	public void computeStatistics(int species, int step, String outputDir) throws IOException {
-		//{"summary":"mean","attractionMultiplier":"0.999749774457852","damage":"80.07986395730077","forceMultiplier":"1.003525433206758","id":"5.569975630427063E33","repulsionMultiplier":"1.004194110166721","species":"0.0","visionRange":"5.008222942758357"}
 		
 		Dataset<Agent> temp = agents.filter((FilterFunction<Agent>) (agent) -> agent.getSpecies() == species);
 		long count = temp.count();
 		Agent stats;
 		if(count > 0) {
 			stats = temp.reduce((ReduceFunction<Agent>) (total, agent) -> {
-				Agent a = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0,0);
+				Agent a = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0);
 				a.setForceMultiplier(total.getForceMultiplier() + agent.getForceMultiplier());
 				a.setAttractionMultiplier(total.getAttractionMultiplier() + agent.getAttractionMultiplier());
 				a.setRepulsionMultiplier(total.getRepulsionMultiplier() + agent.getRepulsionMultiplier());
 				
 				a.getLibido().setMax(total.getLibido().getMax() + agent.getLibido().getMax());
 				a.getAge().setMax(total.getAge().getMax() + agent.getAge().getMax());
-				a.getEnergy().setMax(total.getEnergy().getMax() + agent.getEnergy().getMax());
 				a.getHealth().setMax(total.getHealth().getMax() + agent.getHealth().getMax());
 	
 				a.setDamage(total.getDamage() + agent.getDamage());
@@ -110,13 +106,12 @@ public class AgentDataset implements Serializable{
 	
 			stats.getLibido().setMax(stats.getLibido().getMax() / count);
 			stats.getAge().setMax(stats.getAge().getMax() / count);
-			stats.getEnergy().setMax(stats.getEnergy().getMax() / count);
 			stats.getHealth().setMax(stats.getHealth().getMax() / count);
 	
 			stats.setDamage(stats.getDamage() / count);
 			stats.setVisionRange(stats.getVisionRange() / count);
 		}else
-			stats = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0,0);
+			stats = new Agent(new Vector2D(), new Vector2D(), new Vector2D(), 0,0,0,0,0,0,0,0,0);
 		File statFile = new File(outputDir + "/stats/stats" + step + "/" + "stats" + species + ".json");
 		if(!statFile.getParentFile().getParentFile().exists())
 			statFile.getParentFile().getParentFile().mkdir();
@@ -134,7 +129,6 @@ public class AgentDataset implements Serializable{
 				", \"repulsionMultiplier\":" + stats.getRepulsionMultiplier() +
 				", \"libido\":" + stats.getLibido().getMax() +
 				", \"age\":" + stats.getAge().getMax() +
-				", \"energy\":" + stats.getEnergy().getMax() +
 				", \"health\":" + stats.getHealth().getMax() +
 				", \"damage\":" + stats.getDamage() +
 				", \"visionRange\":" + stats.getVisionRange() +
@@ -143,7 +137,7 @@ public class AgentDataset implements Serializable{
 		statWriter.close();
 	}
 	
-	//Checkpoint the dataset. This has two purposes, out of which we are interested in the latter : local backup, and truncating the logical plan (ie force the lazy evaluations to happen).
+	//Checkpoint the Dataset. This has two purposes, out of which we are interested in the latter : local backup, and truncating the logical plan (ie force the lazy evaluations to happen).
 	//This is very important to save RAM and improve performance. Without it, the program crashes due to a stack overflow error.
 
 	public void checkpoint() {
@@ -153,7 +147,7 @@ public class AgentDataset implements Serializable{
 		agents = agents.coalesce(partitionNumber);
 	}
 
-	//Write the current state of the dataset onto a file.
+	//Write the current state of the Dataset onto a file, but only the location and species this is what is needed for the visualisation.
 	public void outputDataset(int step, String outputPath) throws IOException {
 		agents.select("location", "species").write().json(outputPath + "/steps/step" + step);
 }
